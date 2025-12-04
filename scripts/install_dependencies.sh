@@ -19,27 +19,27 @@ echo "✅ Detected: $OS ($ID)"
 install_debian() {
     echo "📦 Installing dependencies for Debian/Ubuntu..."
     sudo apt-get update
-    sudo apt-get install -y build-essential cmake libcurl4-openssl-dev libsodium-dev git
+    sudo apt-get install -y build-essential cmake libsodium-dev git
 }
 
 install_fedora() {
     echo "📦 Installing dependencies for Fedora/RHEL..."
-    sudo dnf install -y gcc-c++ cmake libcurl-devel libsodium-devel git
+    sudo dnf install -y gcc-c++ cmake libsodium-devel git
 }
 
 install_arch() {
     echo "📦 Installing dependencies for Arch Linux..."
-    sudo pacman -S --noconfirm base-devel cmake libcurl libsodium git
+    sudo pacman -S --noconfirm base-devel cmake libsodium git
 }
 
 install_suse() {
     echo "📦 Installing dependencies for openSUSE..."
-    sudo zypper install -y gcc-c++ cmake libcurl-devel libsodium-devel git
+    sudo zypper install -y gcc-c++ cmake libsodium-devel git
 }
 
 install_alpine() {
     echo "📦 Installing dependencies for Alpine Linux..."
-    sudo apk add build-base cmake curl-dev libsodium-dev git
+    sudo apk add build-base cmake libsodium-dev git
 }
 
 case "$ID" in
@@ -60,7 +60,7 @@ case "$ID" in
         ;;
     *)
         echo "⚠️  Unknown distribution: $ID"
-        echo "   Please manually install: g++, cmake, libcurl, libsodium"
+        echo "   Please manually install: g++, cmake, libsodium"
         exit 1
         ;;
 esac

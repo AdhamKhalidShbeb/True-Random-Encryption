@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(QuantumRandomEncryption VERSION 2.0 LANGUAGES CXX)
+project(QuantumRandomEncryption VERSION 3.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,6 +10,7 @@ add_compile_options(
     -fstack-protector-strong
     -D_FORTIFY_SOURCE=2
     -fPIE
+    -mrdrnd # Enable RDRAND instruction support
 )
 
 add_link_options(
@@ -18,16 +19,18 @@ add_link_options(
 )
 
 # Find dependencies
-find_package(CURL REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SODIUM REQUIRED libsodium)
 
 # Add executable
-add_executable(qre src/Quantum_Random_Encryption.cpp)
+add_executable(qre 
+    src/Quantum_Random_Encryption.cpp
+    src/entropy/EntropyManager.cpp
+)
 
 # Link libraries
-target_link_libraries(qre PRIVATE ${CURL_LIBRARIES} ${SODIUM_LIBRARIES})
-target_include_directories(qre PRIVATE ${CURL_INCLUDE_DIRS} ${SODIUM_INCLUDE_DIRS} include)
+target_link_libraries(qre PRIVATE ${SODIUM_LIBRARIES})
+target_include_directories(qre PRIVATE ${SODIUM_INCLUDE_DIRS} include)
 
 # Install target
 install(TARGETS qre DESTINATION bin)

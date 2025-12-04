@@ -1,10 +1,8 @@
 # Quantum Random Encryption (QRE) - Version 3.0
 
-> **Military-Grade File Encryption with Quantum Random Number Generation**
+> **Military-Grade File Encryption with Hardware True-Randomness**
 
-[![Security](https://img.shields.io/badge/Security-5%2F5-brightgreen)]()
-[![Platform](https://img.shields.io/badge/Platform-Linux-blue)]()
-[![License](https://img.shields.io/badge/License-MIT-yellow)]()
+
 
 ---
 
@@ -56,11 +54,11 @@ make
 ## 💎 Features
 
 ### Core Security
-- **Quantum Random Number Generation** (ANU QRNG) for entropy
-- **Argon2id** key derivation (OWASP recommended)
-- **Multi-round XOR cipher** (4 rounds with derived keys)
-- **HMAC-SHA256** authentication (tamper-proof)
-- **Streaming encryption** for files of any size
+- **Hardware True Random Number Generation** (CPU thermal noise, RDRAND, /dev/random) for entropy
+- **Argon2id** key derivation (OWASP recommended, 64MB memory, 3 iterations)
+- **AES-256-GCM** encryption (NIST approved, hardware accelerated)
+- **Built-in authentication** (GCM authenticated encryption)
+- **Single-pass encryption** with constant memory usage
 
 ### User Protection
 - Strong password requirements (16+ chars, mixed case, digits, symbols)
@@ -128,18 +126,18 @@ QRE-V3/
 
 ### Encryption Process
 ```
-Password → Argon2id(64MB, 3 iter) → 1024-bit Master Key
-         ↓
-    Derive 4 Round Keys (SHA-256 + Nonce)
-         ↓
-    Multi-Round XOR Cipher (Position-dependent keystreams)
-         ↓
-    HMAC-SHA256 Authentication
+Password + Salt → Argon2id(64MB, 3 iter) → 256-bit AES Key
+                  ↓
+            Hardware Random Nonce (12 bytes)
+                  ↓
+         AES-256-GCM Encryption (Hardware Accelerated)
+                  ↓
+         Ciphertext + Authentication Tag (16 bytes)
 ```
 
-### File Format V2
+### File Format V3
 ```
-[Version:1][ExtLen:1][Extension:N][Salt:128][Nonce:16][Ciphertext][HMAC:32]
+[Version:1][ExtLen:1][Extension:N][Salt:128][Nonce:12][Ciphertext+GCMTag:N+16]
 ```
 
 ### Hardening Features
@@ -147,7 +145,7 @@ Password → Argon2id(64MB, 3 iter) → 1024-bit Master Key
 - ✅ RAII for resource cleanup
 - ✅ Constant-time password validation
 - ✅ Integer overflow protection
-- ✅ Short-read detection for /dev/urandom
+- ✅ Hardware-accelerated encryption (AES-NI)
 
 ---
 
@@ -170,7 +168,7 @@ Password → Argon2id(64MB, 3 iter) → 1024-bit Master Key
 - ✅ openSUSE / SUSE
 - ✅ Alpine Linux
 - ✅ Gentoo
-- ✅ Any distro with g++, cmake, libcurl, libsodium
+- ✅ Any distro with g++, cmake, libsodium
 
 ---
 
@@ -200,7 +198,7 @@ MIT License - See LICENSE file for details
 
 ## 🙏 Credits
 
-- **QRNG:** Australian National University Quantum Random Number Generator
+- **Entropy:** CPU hardware RNG (RDRAND), /dev/hwrng, /dev/random (thermal noise)
 - **Crypto:** libsodium (Argon2id, HMAC-SHA256)
 - **Security Audit:** Comprehensive review by Antigravity AI
 
