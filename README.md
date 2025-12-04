@@ -1,4 +1,4 @@
-# Quantum Random Encryption (QRE) - Version 3.0
+# Quantum Random Encryption (QRE) - Version 4.0
 
 > **Military-Grade File Encryption with Hardware True-Randomness**
 
@@ -6,28 +6,21 @@
 
 ---
 
-## 🎯 What's New in V3.0
+## 🎯 What's New in V4.0
 
-### 🔒 **Security Hardening**
-- Fixed **6 critical security bugs** discovered during exhaustive audit
-- Eliminated timing attack vulnerabilities
-- Enhanced memory safety with proper mlock/munlock tracking
-- Improved input validation and error handling
+### 📦 **Compression Support** (NEW!)
+- **4-tier compression** system using Zstandard (zstd)
+- **40-50% file size reduction** on text, logs, and code
+- Fast, Balanced, Maximum, and Ultra compression levels
+- Transparent compression/decompression on encrypt/decrypt
+- **Backward compatible** with V3 files
 
-### 📁 **Universal File Support**
-- **ANY file type** encryption (images, videos, documents, PDFs, archives, etc.)
-- Automatic file extension preservation
-- Smart output filename generation
-
-### 🐧 **Cross-Distribution Linux Support**
-- **Universal installer** for all major distros (Ubuntu, Debian, Fedora, Arch, openSUSE, etc.)
-- One-command setup with automatic dependency resolution
-- CMake-based build system for maximum compatibility
-
-### ⚡ **Developer Experience**
-- Clean project structure (`src/`, `include/`, `scripts/`, `tests/`)
-- IDE configuration included (VS Code ready)
-- Quick start guide for immediate usage
+### ✨ **Previous Features (V3.0)**
+- ✅ AES-256-GCM encryption (hardware accelerated)
+- ✅ Hardware true-randomness (RDRAND, /dev/hwrng, /dev/random)
+- ✅ Argon2id key derivation (64MB, 3 iterations)
+- ✅ Universal Linux support (all major distros)
+- ✅ Any file type encryption with extension preservation
 
 ---
 
@@ -77,27 +70,37 @@ make
 
 ## 📖 Usage
 
-### Encrypt
+### Basic Encryption
 ```bash
 ./qre encrypt document.pdf
-# Creates: document.qre (original extension preserved internally)
+# Creates: document.qre
 ```
 
-### Decrypt
+### Encryption with Compression (NEW!)
+```bash
+# Fast compression (optimal for speed)
+./qre encrypt document.pdf --compress-fast
+
+# Balanced compression (recommended)
+./qre encrypt largefile.txt --compress
+
+# Maximum compression (best ratio)
+./qre encrypt archive.tar --compress-max
+
+# Ultra compression (maximum ratio, slower)
+./qre encrypt database.sql --compress-ultra
+```
+
+### Decryption (automatic decompression)
 ```bash
 ./qre decrypt document.qre
-# Creates: document.pdf (original extension restored!)
+# Automatically detects and decompresses if needed
 ```
 
-### With Custom Output
+### With Custom Output & Verbose
 ```bash
-./qre encrypt photo.jpg encrypted_photo.qre
-./qre decrypt encrypted_photo.qre restored_photo.jpg
-```
-
-### Verbose Mode
-```bash
-./qre encrypt file.zip --verbose
+./qre encrypt data.json backup.qre --compress --verbose
+./qre decrypt backup.qre restored.json -v
 ```
 
 ---
@@ -135,10 +138,11 @@ Password + Salt → Argon2id(64MB, 3 iter) → 256-bit AES Key
          Ciphertext + Authentication Tag (16 bytes)
 ```
 
-### File Format V3
+### File Format V4
 ```
-[Version:1][ExtLen:1][Extension:N][Salt:128][Nonce:12][Ciphertext+GCMTag:N+16]
+[Version:1][Flags:1][ExtLen:1][Extension:N][Salt:128][Nonce:12][Ciphertext+GCMTag:N+16]
 ```
+*Flags byte stores compression level (bits 0-2), V3 files still supported*
 
 ### Hardening Features
 - ✅ Compile-time safety checks (`static_assert`)

@@ -1,4 +1,4 @@
-# QRE V3.0 - Quick Start Guide
+# QRE V4.0 - Quick Start Guide
 
 **Get started in 60 seconds!**
 
@@ -35,15 +35,30 @@ qre encrypt photo.jpg
 # Creates: photo.qre
 ```
 
-### Decrypt
+### Encrypt with Compression (NEW in V4.0!)
+```bash
+# Balanced compression (recommended)
+qre encrypt document.pdf --compress
+
+# Fast compression
+qre encrypt video.mp4 --compress-fast
+
+# Maximum compression (smaller files)
+qre encrypt logs.txt --compress-max
+
+# Ultra compression (best ratio)
+qre encrypt database.sql --compress-ultra
+```
+
+### Decrypt (automatic decompression)
 ```bash
 qre decrypt photo.qre
-# Restores: photo.jpg (original extension preserved!)
+# Restores: photo.jpg (auto-detects compression)
 ```
 
 ### Custom Output
 ```bash
-qre encrypt video.mp4 secure.qre
+qre encrypt video.mp4 secure.qre --compress
 qre decrypt secure.qre restored.mp4
 ```
 
@@ -98,13 +113,27 @@ sudo cp qre /usr/local/bin/
 
 ### Verbose Output
 ```bash
-qre encrypt file.zip --verbose
+qre encrypt file.zip --compress --verbose
+```
+
+### Compression Comparison
+```bash
+# Create copies to compare
+cp data.txt test1.txt test2.txt test3.txt
+
+# Encrypt with different levels
+qre encrypt test1.txt out1.qre                 # No compression
+qre encrypt test2.txt out2.qre --compress-fast # Fast
+qre encrypt test3.txt out3.qre --compress-max  # Maximum
+
+# Compare sizes
+ls -lh out*.qre
 ```
 
 ### Batch Encryption
 ```bash
 for file in *.pdf; do
-    qre encrypt "$file"
+    qre encrypt "$file" --compress
 done
 ```
 

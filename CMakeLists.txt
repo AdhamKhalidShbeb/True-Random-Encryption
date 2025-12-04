@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(QuantumRandomEncryption VERSION 3.1 LANGUAGES CXX)
+project(QuantumRandomEncryption VERSION 4.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,6 +21,7 @@ add_link_options(
 # Find dependencies
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SODIUM REQUIRED libsodium)
+pkg_check_modules(ZSTD REQUIRED libzstd)
 
 # Add executable
 add_executable(qre 
@@ -29,8 +30,8 @@ add_executable(qre
 )
 
 # Link libraries
-target_link_libraries(qre PRIVATE ${SODIUM_LIBRARIES})
-target_include_directories(qre PRIVATE ${SODIUM_INCLUDE_DIRS} include)
+target_link_libraries(qre PRIVATE ${SODIUM_LIBRARIES} ${ZSTD_LIBRARIES})
+target_include_directories(qre PRIVATE ${SODIUM_INCLUDE_DIRS} ${ZSTD_INCLUDE_DIRS} include)
 
 # Install target
 install(TARGETS qre DESTINATION bin)
