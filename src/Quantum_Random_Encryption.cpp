@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <vector>
 
+#include "compression/CompressionManager.hpp"
 #include "entropy/EntropyManager.hpp"
 #include "password_blacklist.hpp"
 
@@ -251,6 +252,9 @@ const unsigned char FILE_FORMAT_VERSION = 0x03; // AES-256-GCM
 
 // Global verbose flag (set via command line)
 bool VERBOSE = false;
+
+// Global compression level (set via command line)
+QRE::CompressionLevel COMPRESSION_LEVEL = QRE::CompressionLevel::NONE;
 
 // Compile-time safety checks
 static_assert(KEY_SIZE == 32, "KEY_SIZE must be 32 bytes for AES-256");
@@ -672,6 +676,14 @@ bool self_test() {
     }
   }
 
+  // Test 3: Compression round-trip
+  {
+    if (!QRE::compression_self_test(VERBOSE)) {
+      std::cerr << "Self-test FAILED: Compression" << std::endl;
+      return false;
+    }
+  }
+
   VLOG("All self-tests passed!");
   return true;
 }
@@ -852,6 +864,26 @@ void perform_encryption(const std::string &input_file,
   }
   infile.close();
 
+  // Compress plaintext if compression enabled
+  std::vector<unsigned char> data_to_encrypt;
+  if (COMPRESSION_LEVEL != QRE::CompressionLevel::NONE) {
+    VLOG("Compressing with " << QRE::compression_level_name(COMPRESSION_LEVEL)
+                             << "...");
+    data_to_encrypt = QRE::compress_data(plaintext, COMPRESSION_LEVEL, VERBOSE);
+
+    if (data_to_encrypt.empty()) {
+      std::cerr << "Error: Compression failed" << std::endl;
+      secure_wipe_vector(plaintext);
+      exit(1);
+    }
+
+    // Securely wipe uncompressed plaintext
+    secure_wipe_vector(plaintext);
+  } else {
+    // No compression - use plaintext directly
+    data_to_encrypt = std::move(plaintext);
+  }
+
   // Encrypt with AES-256-GCM
   // SECURITY: Atomically create output file with O_EXCL | O_NOFOLLOW
   // This prevents TOCTOU race - rejects if file exists or is symlink
@@ -874,10 +906,10 @@ void perform_encryption(const std::string &input_file,
   // Encrypt with AES-256-GCM
   VLOG("Encrypting with AES-256-GCM...");
   std::vector<unsigned char> ciphertext =
-      encrypt_aes256gcm(plaintext, key, nonce);
+      encrypt_aes256gcm(data_to_encrypt, key, nonce);
 
-  // Securely wipe plaintext
-  secure_wipe_vector(plaintext);
+  // Securely wipe data_to_encrypt
+  secure_wipe_vector(data_to_encrypt);
 
   // Write file header
   VLOG("Writing file header...");
@@ -913,6 +945,15 @@ void perform_encryption(const std::string &input_file,
   if (write(out_fd, ciphertext.data(), ciphertext.size()) !=
       (ssize_t)ciphertext.size()) {
     std::cerr << "Error: Failed to write ciphertext (disk full?)" << std::endl;
+    close(out_fd);
+    exit(1);
+  }
+
+  // Append compression flag (1 byte) at the end
+  // This ensures backward compatibility (old files don't have this byte)
+  unsigned char comp_flag = static_cast<unsigned char>(COMPRESSION_LEVEL);
+  if (write(out_fd, &comp_flag, 1) != 1) {
+    std::cerr << "Error: Failed to write compression flag" << std::endl;
     close(out_fd);
     exit(1);
   }
@@ -1028,8 +1069,42 @@ void perform_decryption(const std::string &input_file,
   }
 
   // Decrypt (also verifies authentication tag)
-  std::vector<unsigned char> plaintext =
-      decrypt_aes256gcm(ciphertext, key, nonce);
+  // STRATEGY: Try to decrypt assuming new format (flag at end).
+  // If that fails, try assuming old format (no flag).
+
+  std::vector<unsigned char> plaintext;
+  QRE::CompressionLevel compression_used = QRE::CompressionLevel::NONE;
+
+  // Check if last byte could be a compression flag
+  if (ciphertext_size > 0) {
+    unsigned char potential_flag = ciphertext.back();
+    if (potential_flag <= 0x04) {
+      // Potential new format. Try decrypting without the last byte.
+      std::vector<unsigned char> ciphertext_new(ciphertext.begin(),
+                                                ciphertext.end() - 1);
+
+      // Try decrypt
+      plaintext = decrypt_aes256gcm(ciphertext_new, key, nonce);
+
+      if (!plaintext.empty()) {
+        // Success! It was a new format file.
+        compression_used = static_cast<QRE::CompressionLevel>(potential_flag);
+        if (compression_used != QRE::CompressionLevel::NONE) {
+          VLOG("Detected compression: "
+               << QRE::compression_level_name(compression_used));
+        }
+      }
+    }
+  }
+
+  // If plaintext is still empty, try old format (treat whole file as
+  // ciphertext)
+  if (plaintext.empty()) {
+    plaintext = decrypt_aes256gcm(ciphertext, key, nonce);
+    if (!plaintext.empty()) {
+      VLOG("Detected old V3 format (no compression)");
+    }
+  }
 
   if (plaintext.empty()) {
     std::cerr << "\n[ERROR] Decryption failed! Wrong password or file has "
@@ -1039,6 +1114,25 @@ void perform_decryption(const std::string &input_file,
   }
 
   VLOG("✓ Authentication and decryption successful");
+
+  // Decompress if compression was used
+  std::vector<unsigned char> final_plaintext;
+  if (compression_used != QRE::CompressionLevel::NONE) {
+    VLOG("Decompressing data...");
+    final_plaintext = QRE::decompress_data(plaintext, VERBOSE);
+
+    if (final_plaintext.empty()) {
+      std::cerr << "Error: Decompression failed" << std::endl;
+      secure_wipe_vector(plaintext);
+      exit(1);
+    }
+
+    // Securely wipe compressed plaintext
+    secure_wipe_vector(plaintext);
+  } else {
+    // No decompression needed
+    final_plaintext = std::move(plaintext);
+  }
 
   // SECURITY: Atomically create output file with O_CREAT | O_EXCL |
   // O_NOFOLLOW
@@ -1058,8 +1152,8 @@ void perform_decryption(const std::string &input_file,
   }
 
   // Write decrypted data
-  if (write(out_fd, plaintext.data(), plaintext.size()) !=
-      (ssize_t)plaintext.size()) {
+  if (write(out_fd, final_plaintext.data(), final_plaintext.size()) !=
+      (ssize_t)final_plaintext.size()) {
     std::cerr << "Error: Failed to write decrypted data (disk full?)"
               << std::endl;
     close(out_fd);
@@ -1072,8 +1166,8 @@ void perform_decryption(const std::string &input_file,
 
   close(out_fd);
 
-  // Securely wipe plaintext
-  secure_wipe_vector(plaintext);
+  // Securely wipe final_plaintext
+  secure_wipe_vector(final_plaintext);
 
   infile.close();
 
@@ -1111,8 +1205,17 @@ int main(int argc, char *argv[]) {
 
   // Parse flags
   for (int i = 1; i < argc; i++) {
-    if (std::string(argv[i]) == "--verbose" || std::string(argv[i]) == "-v") {
+    std::string arg = argv[i];
+    if (arg == "--verbose" || arg == "-v") {
       VERBOSE = true;
+    } else if (arg == "--compress-fast") {
+      COMPRESSION_LEVEL = QRE::CompressionLevel::FAST;
+    } else if (arg == "--compress") {
+      COMPRESSION_LEVEL = QRE::CompressionLevel::BALANCED;
+    } else if (arg == "--compress-max") {
+      COMPRESSION_LEVEL = QRE::CompressionLevel::MAX;
+    } else if (arg == "--compress-ultra") {
+      COMPRESSION_LEVEL = QRE::CompressionLevel::ULTRA;
     }
   }
 
@@ -1123,37 +1226,49 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (argc < 3 || argc > 5) {
+  if (argc < 3 || argc > 7) {
     std::cout << "Usage:\n";
     std::cout << "  Encrypt: " << argv[0]
-              << " encrypt <input.txt> [output.qre] [--verbose]\n";
+              << " encrypt <input.txt> [output.qre] [options]\n";
     std::cout << "  Decrypt: " << argv[0]
-              << " decrypt <input.qre> [output.txt] [--verbose]\n";
+              << " decrypt <input.qre> [output.txt] [options]\n";
     std::cout << "\nOptions:\n";
-    std::cout << "  --verbose, -v    Enable debug logging\n";
+    std::cout << "  --verbose, -v         Enable debug logging\n";
+    std::cout << "  --compress-fast       Fast compression (zstd level 1)\n";
+    std::cout << "  --compress            Balanced compression (zstd level 6, "
+                 "recommended)\n";
+    std::cout
+        << "  --compress-max        Maximum compression (zstd level 15)\n";
+    std::cout << "  --compress-ultra      Ultra compression (zstd level 22)\n";
     std::cout
         << "\nIf output file is not specified, it will be auto-generated.\n";
+    std::cout << "Compression only applies to encryption.\n";
 
     return 1;
   }
 
-  std::string mode = argv[1];
-  std::string input_file = argv[2];
+  // Extract mode and filenames (skip flags)
+  std::vector<std::string> positional_args;
+  for (int i = 1; i < argc; i++) {
+    std::string arg = argv[i];
+    if (arg[0] != '-') { // Not a flag
+      positional_args.push_back(arg);
+    }
+  }
+
+  if (positional_args.size() < 2) {
+    std::cerr << "Error: Missing required arguments (mode and input file)"
+              << std::endl;
+    return 1;
+  }
+
+  std::string mode = positional_args[0];
+  std::string input_file = positional_args[1];
   std::string output_file;
 
   // Auto-generate output filename if not provided
-  // Check if argv[3] is a filename or flag
-  if (argc == 4) {
-    std::string potential_output = argv[3];
-    // If it's a flag, auto-generate instead
-    if (potential_output == "--verbose" || potential_output == "-v") {
-      output_file = auto_generate_output_filename(input_file, mode);
-    } else {
-      output_file = potential_output;
-    }
-  } else if (argc == 5) {
-    // Format: ./qre mode input output --verbose
-    output_file = argv[3];
+  if (positional_args.size() >= 3) {
+    output_file = positional_args[2];
   } else {
     output_file = auto_generate_output_filename(input_file, mode);
   }

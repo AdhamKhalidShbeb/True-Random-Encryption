@@ -62,8 +62,9 @@
 
 **File Format:** V3 (AES-256-GCM)
 ```
-[Version:1][ExtLen:1][Extension:N][Salt:128][Nonce:12][Ciphertext+Tag:N+16]
+[Version:1][ExtLen:1][Extension:N][Salt:128][Nonce:12][Ciphertext+Tag:N+16][CompFlag:1]
 ```
+*Compression Flag appended at EOF (optional, for V3.1+)*
 
 **Encryption Flow:**
 ```

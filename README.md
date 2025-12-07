@@ -138,11 +138,11 @@ Password + Salt → Argon2id(64MB, 3 iter) → 256-bit AES Key
          Ciphertext + Authentication Tag (16 bytes)
 ```
 
-### File Format V4
+### File Format V3 (Enhanced)
 ```
-[Version:1][Flags:1][ExtLen:1][Extension:N][Salt:128][Nonce:12][Ciphertext+GCMTag:N+16]
+[Version:1][ExtLen:1][Extension:N][Salt:128][Nonce:12][Ciphertext+GCMTag:N+16][CompFlag:1]
 ```
-*Flags byte stores compression level (bits 0-2), V3 files still supported*
+*Compression Flag (1 byte) appended at the end. Auto-detected during decryption.*
 
 ### Hardening Features
 - ✅ Compile-time safety checks (`static_assert`)
