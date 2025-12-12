@@ -1,0 +1,92 @@
+/* Modern Purple Theme */
+
+QMainWindow {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+}
+
+QWidget {
+    font-family: "Segoe UI", "Roboto", sans-serif;
+    font-size: 14px;
+}
+
+QLabel#titleLabel {
+    font-size: 24px;
+    font-weight: bold;
+    color: #cba6f7;
+    margin-bottom: 20px;
+}
+
+QGroupBox {
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-weight: bold;
+    color: #cba6f7;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+    left: 10px;
+}
+
+QLineEdit {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    padding: 8px;
+    color: #cdd6f4;
+}
+
+QLineEdit:focus {
+    border: 1px solid #cba6f7;
+}
+
+QPushButton {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    padding: 8px 16px;
+    color: #cdd6f4;
+}
+
+QPushButton:hover {
+    background-color: #45475a;
+}
+
+QPushButton#encryptButton {
+    background-color: #cba6f7;
+    color: #1e1e2e;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+}
+
+QPushButton#encryptButton:hover {
+    background-color: #dce0e8;
+}
+
+QPushButton#decryptButton {
+    background-color: #89b4fa;
+    color: #1e1e2e;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+}
+
+QPushButton#decryptButton:hover {
+    background-color: #b4befe;
+}
+
+QProgressBar {
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    text-align: center;
+    background-color: #313244;
+}
+
+QProgressBar::chunk {
+    background-color: #cba6f7;
+}

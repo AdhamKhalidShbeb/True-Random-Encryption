@@ -3,40 +3,42 @@
 
 #include "EntropySource.hpp"
 #include <fstream>
-#include <iostream>
 
 //
 // System True RNG (/dev/random)
 // Uses kernel entropy pool from thermal noise, interrupt timing, etc.
 // May block if entropy is low (ensures true randomness)
 //
-class RandomSource : public EntropySource {
+class RandomSource final : public EntropySource {
 public:
-  std::string name() const override { return "Kernel True RNG (/dev/random)"; }
+  [[nodiscard]] std::string name() const noexcept override {
+    return "Kernel True RNG (/dev/random)";
+  }
 
-  bool is_available() override {
+  [[nodiscard]] bool is_available() noexcept override {
     std::ifstream f("/dev/random", std::ios::binary);
     return f.good();
   }
 
-  std::vector<unsigned char> get_entropy(size_t bytes) override {
+  [[nodiscard]] std::vector<unsigned char>
+  get_entropy(size_t bytes) noexcept override {
     std::vector<unsigned char> result(bytes);
     std::ifstream random_dev("/dev/random", std::ios::binary);
 
-    if (!random_dev)
+    if (!random_dev) {
       return {};
+    }
 
-    random_dev.read(reinterpret_cast<char *>(result.data()), bytes);
+    random_dev.read(reinterpret_cast<char *>(result.data()),
+                    static_cast<std::streamsize>(bytes));
     if (random_dev.gcount() != static_cast<std::streamsize>(bytes)) {
-      return {}; // Partial read
+      return {};
     }
 
     return result;
   }
 
-  int priority() const override {
-    return 50; // Lowest priority (fallback), but still true randomness
-  }
+  [[nodiscard]] int priority() const noexcept override { return 50; }
 };
 
 #endif // SYSTEM_SOURCE_HPP

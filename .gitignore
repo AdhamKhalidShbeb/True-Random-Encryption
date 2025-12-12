@@ -1,25 +1,35 @@
 # Build artifacts
 build/
-*.o
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
 *.a
+*.o
 *.so
-*.exe
+
+# Qt autogen
+*_autogen/
+.qt/
+moc_*.cpp
+ui_*.h
+
+# Executables
 qre
-Quantum_Random_Encryption
-
-# IDE files
-.vscode/*
-!.vscode/c_cpp_properties.json
-!.vscode/settings.json
-.clangd/
-.cache/
-
-# Temporary files
-*.qre
-*.tmp
-*~
-.DS_Store
+qre-gui
+bin/qre
+bin/qre-gui
 
 # Test files
-test_*.txt
-test_*.sh.o
+test*.txt
+*.qre
+
+# IDE
+.vscode/
+.clangd/
+.cache/
+compile_commands.json
+
+# OS
+.DS_Store
+Thumbs.db

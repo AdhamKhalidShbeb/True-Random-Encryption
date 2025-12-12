@@ -4,6 +4,28 @@
 
 ---
 
+## 🎨 GUI Quick Start (V4.0)
+
+### Launch GUI
+```bash
+cd build
+./qre-gui
+```
+
+### Encrypt a File
+1. **Select File**: Drag & drop or click "Browse"
+2. **Enter Password**: Must meet requirements (16+ chars, mixed case, digits, symbols)
+3. **Click "ENCRYPT"**: Wait for success message
+4. **Output**: `filename.qre` created in same directory
+
+### Decrypt a File
+1. **Select `.qre` File**: Drag & drop or browse
+2. **Enter Password**: Same password used for encryption
+3. **Click "DECRYPT"**: Original file restored
+4. **Output**: Original file with original extension
+
+---
+
 ## ⚡ Installation
 
 ### Step 1: Install Dependencies

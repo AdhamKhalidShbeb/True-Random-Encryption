@@ -3,111 +3,95 @@
 
 #include "EntropySource.hpp"
 #include <cpuid.h>
+#include <cstring>
 #include <fstream>
 #include <immintrin.h>
 #include <iostream>
 
 //
-// CPU Hardware RNG (RDRAND/RDSEED)
+// CPU Hardware RNG (RDRAND)
 //
-class CpuRngSource : public EntropySource {
+class CpuRngSource final : public EntropySource {
 public:
-  std::string name() const override {
-    return "CPU Hardware RNG (RDRAND/RDSEED)";
+  [[nodiscard]] std::string name() const noexcept override {
+    return "CPU Hardware RNG (RDRAND)";
   }
 
-  bool is_available() override {
+  [[nodiscard]] bool is_available() noexcept override {
     unsigned int eax, ebx, ecx, edx;
     // Check for RDRAND support (Leaf 1, ECX bit 30)
     if (__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {
-      return (ecx & (1 << 30)) != 0;
+      return (ecx & (1U << 30)) != 0;
     }
     return false;
   }
 
-  std::vector<unsigned char> get_entropy(size_t bytes) override {
+  [[nodiscard]] std::vector<unsigned char>
+  get_entropy(size_t bytes) noexcept override {
     std::vector<unsigned char> result;
     result.reserve(bytes);
 
-    size_t bytes_generated = 0;
-    while (bytes_generated < bytes) {
-      unsigned long long val;
-      int retries = 0;
-      const int MAX_RETRIES = 10;
-      int success = 0;
+    while (result.size() < bytes) {
+      unsigned long long val = 0;
+      bool success = false;
 
-      // Try RDSEED first (better entropy), fallback to RDRAND
-      while (retries < MAX_RETRIES && !success) {
-        // _rdseed64_step returns 1 on success
-        // Note: We use __builtin_ia32_rdseed64_step if available, or inline asm
-        // if needed For simplicity and portability with -mrdrnd, we'll try
-        // RDRAND which is more widely available and stable than RDSEED (which
-        // can underflow). Ideally we would check for RDSEED support separately.
-        // For this implementation, we will stick to RDRAND as the primary
-        // stable source.
-
+      // Retry up to 10 times on failure
+      for (int retries = 0; retries < 10 && !success; ++retries) {
         if (_rdrand64_step(&val)) {
-          success = 1;
-        } else {
-          retries++;
+          success = true;
         }
       }
 
       if (!success) {
-        // Hardware failure or busy
-        std::cerr << "Warning: RDRAND failed after retries" << std::endl;
-        return {}; // Return empty to trigger fallback
+        std::cerr << "Warning: RDRAND failed after retries\n";
+        return {};
       }
 
-      // Append bytes
-      unsigned char *p = reinterpret_cast<unsigned char *>(&val);
-      for (size_t i = 0; i < 8 && bytes_generated < bytes; ++i) {
-        result.push_back(p[i]);
-        bytes_generated++;
-      }
+      // Copy 8 bytes at a time (or remaining bytes needed)
+      const auto *bytes_ptr = reinterpret_cast<const unsigned char *>(&val);
+      const size_t to_copy = std::min(size_t{8}, bytes - result.size());
+      result.insert(result.end(), bytes_ptr, bytes_ptr + to_copy);
     }
 
     return result;
   }
 
-  int priority() const override {
-    return 100; // Highest priority
-  }
+  [[nodiscard]] int priority() const noexcept override { return 100; }
 };
 
 //
 // Device Hardware RNG (/dev/hwrng)
 //
-class DeviceRngSource : public EntropySource {
+class DeviceRngSource final : public EntropySource {
 public:
-  std::string name() const override {
+  [[nodiscard]] std::string name() const noexcept override {
     return "Device Hardware RNG (/dev/hwrng)";
   }
 
-  bool is_available() override {
+  [[nodiscard]] bool is_available() noexcept override {
     std::ifstream f("/dev/hwrng", std::ios::binary);
     return f.good();
   }
 
-  std::vector<unsigned char> get_entropy(size_t bytes) override {
+  [[nodiscard]] std::vector<unsigned char>
+  get_entropy(size_t bytes) noexcept override {
     std::vector<unsigned char> result(bytes);
     std::ifstream f("/dev/hwrng", std::ios::binary);
 
-    if (!f)
+    if (!f) {
       return {};
+    }
 
-    f.read(reinterpret_cast<char *>(result.data()), bytes);
+    f.read(reinterpret_cast<char *>(result.data()),
+           static_cast<std::streamsize>(bytes));
     if (f.gcount() != static_cast<std::streamsize>(bytes)) {
-      return {}; // Partial read or error
+      return {};
     }
 
     return result;
   }
 
-  int priority() const override {
-    return 90; // High priority, but prefer CPU instruction if available
-               // (faster)
-  }
+  [[nodiscard]] int priority() const noexcept override { return 90; }
 };
 
 #endif // HARDWARE_SOURCES_HPP

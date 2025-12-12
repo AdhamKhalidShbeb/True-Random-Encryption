@@ -40,7 +40,7 @@ std::vector<unsigned char> EntropyManager::get_bytes(size_t num_bytes) {
     }
   }
 
-  // If all failed (should never happen due to /dev/urandom), return empty
+  // If all failed (should never happen due to /dev/random), return empty
   std::cerr << "CRITICAL ERROR: All entropy sources failed!" << std::endl;
   return {};
 }
