@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-namespace QRE {
+namespace TRE {
 
 namespace fs = std::filesystem;
 
@@ -78,6 +78,6 @@ decrypt_aes256gcm(const std::vector<unsigned char> &ciphertext,
 [[nodiscard]] std::string auto_generate_output_filename(std::string_view input,
                                                         std::string_view mode);
 
-} // namespace QRE
+} // namespace TRE
 
 #endif // CRYPTO_CORE_HPP

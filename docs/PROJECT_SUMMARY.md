@@ -1,15 +1,15 @@
-# QRE V3.1 - Project Summary
+# TRE V4.0 - Project Summary
 
-**Status:** ✅ Production Ready (A+ Security)  
-**Version:** 3.1 (AES-256-GCM)  
-**Security Rating:** ⭐⭐⭐⭐⭐ (5/5 - A+)
+**Status:** Production Ready (A+ Security)
+**Version:** 4.0 (AES-256-GCM + Compression)
+**Security Rating:** 5/5 (A+)
 
 ---
 
-## 📦 What's Included
+## What's Included
 
 ### Core Files
-- `src/Quantum_Random_Encryption.cpp` - AES-256-GCM encryption engine (~1,265 lines)
+- `src/True_Random_Encryption.cpp` - AES-256-GCM encryption engine (~1,265 lines)
 - `src/entropy/EntropyManager.cpp` - Hardware RNG manager
 - `include/password_blacklist.hpp` - 1,000 common password blacklist
 
@@ -27,7 +27,7 @@
 
 ---
 
-## 🔐 Security Features
+## Security Features
 
 ### Encryption
 - **Algorithm:** AES-256-GCM (NIST FIPS 140-2 approved)
@@ -58,7 +58,7 @@
 
 ---
 
-## 📊 Technical Specifications
+## Technical Specifications
 
 **File Format:** V3 (AES-256-GCM)
 ```
@@ -82,28 +82,33 @@ Password + Salt → Argon2id(64MB) → 256-bit Key
 
 ---
 
-## 🏆 Security Grade: A+
+## Security Grade: A+
 
 Your encryption tool exceeds industry standards:
-- ✅ Stronger than OpenSSL (GCM vs CBC)
-- ✅ Better KDF than GPG (Argon2id vs S2K)
-- ✅ TOCTOU protection (others lack this)
-- ✅ Hardware entropy validation (unique feature)
+- Stronger than OpenSSL (GCM vs CBC)
+- Better KDF than GPG (Argon2id vs S2K)
+- TOCTOU protection (others lack this)
+- Hardware entropy validation (unique feature)
 
-**Ready for production deployment.** 🔒
+**Ready for production deployment.**
 
 ---
 
-## 🚀 Major Improvements
+## Major Improvements
+
+### V4.0 (Compression + GUI)
+- **Compression Support:** Zstd compression (4 levels)
+- **GUI Application:** Modern Qt-based interface
+- **Project Renaming:** Renamed to TRE
 
 ### V3.1 (AES-256-GCM Release) - A+ Security
-- ✅ **Industry-standard encryption:** AES-256-GCM (NIST approved)
-- ✅ **Hardware acceleration:** AES-NI instructions
-- ✅ **TOCTOU protection:** Atomic file operations with O_NOFOLLOW
-- ✅ **Enhanced validation:** Entropy source checks, parameter validation
-- ✅ **Rate limiting:** Brute-force protection on encrypt & decrypt
-- ✅ **Case-insensitive blacklist:** Stronger password enforcement
-- ✅ **Write error detection:** Prevents corrupted files
+- **Industry-standard encryption:** AES-256-GCM (NIST approved)
+- **Hardware acceleration:** AES-NI instructions
+- **TOCTOU protection:** Atomic file operations with O_NOFOLLOW
+- **Enhanced validation:** Entropy source checks, parameter validation
+- **Rate limiting:** Brute-force protection on encrypt & decrypt
+- **Case-insensitive blacklist:** Stronger password enforcement
+- **Write error detection:** Prevents corrupted files
 
 ### V3.0 (Security Hardening)
 - **6 critical bugs fixed:**
@@ -126,7 +131,7 @@ Your encryption tool exceeds industry standards:
 
 ---
 
-## 📊 Current Status
+## Current Status
 
 ```
 Project Structure:
@@ -141,29 +146,29 @@ Project Structure:
 └── .clangd                 ← Language server config
 ```
 
-**Lines of Code:** ~1,500  
-**Tests:** Security & functionality  
-**Dependencies:** g++, cmake, libsodium  
+**Lines of Code:** ~1,500
+**Tests:** Security & functionality
+**Dependencies:** g++, cmake, libsodium
 **Supported Platforms:** All major Linux distributions
 
 ---
 
-## ✅ Quality Assurance
+## Quality Assurance
 
-- ✅ Compiles without warnings
-- ✅ All security audits passed
-- ✅ Memory safety verified
-- ✅ Cryptography validated
-- ✅ Cross-distribution tested
-- ✅ Documentation complete
+- Compiles without warnings
+- All security audits passed
+- Memory safety verified
+- Cryptography validated
+- Cross-distribution tested
+- Documentation complete
 
 ---
 
 **Ready for:**
-- ✅ Production use
-- ✅ Open source release
-- ✅ Package distribution
-- ✅ Security review
+- Production use
+- Open source release
+- Package distribution
+- Security review
 
 ---
 

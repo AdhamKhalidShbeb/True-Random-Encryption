@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Universal Dependency Installer for QRE
+# Universal Dependency Installer for TRE
 # Supports: Debian/Ubuntu, Fedora/RHEL, Arch/Manjaro, openSUSE, Alpine
 
 echo "🔍 Detecting Linux Distribution..."
@@ -67,5 +67,5 @@ esac
 
 echo ""
 echo "✅ Dependencies installed successfully!"
-echo "   You can now build QRE with:"
+echo "   You can now build TRE with:"
 echo "   mkdir build && cd build && cmake .. && make"

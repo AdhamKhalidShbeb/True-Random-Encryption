@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace QRE {
+namespace TRE {
 
 class TarManager {
 private:
@@ -93,4 +93,4 @@ public:
   }
 };
 
-} // namespace QRE
+} // namespace TRE

@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace QRE {
+namespace TRE {
 
 //
 // SECURE MEMORY UTILITIES
@@ -348,9 +348,9 @@ std::string auto_generate_output_filename(std::string_view input,
   if (mode == "encrypt") {
     const auto dot_pos = input.find_last_of('.');
     if (dot_pos != std::string_view::npos) {
-      return std::string(input.substr(0, dot_pos)) + ".qre";
+      return std::string(input.substr(0, dot_pos)) + ".tre";
     }
-    return input_str + ".qre";
+    return input_str + ".tre";
   }
 
   // Decrypt mode: try to read stored extension from file
@@ -370,10 +370,10 @@ std::string auto_generate_output_filename(std::string_view input,
 
         if (infile.gcount() == ext_len) {
           std::string base = input_str;
-          constexpr std::string_view QRE_EXT = ".qre";
-          if (base.length() > QRE_EXT.length() &&
-              base.substr(base.length() - QRE_EXT.length()) == QRE_EXT) {
-            base = base.substr(0, base.length() - QRE_EXT.length());
+          constexpr std::string_view TRE_EXT = ".tre";
+          if (base.length() > TRE_EXT.length() &&
+              base.substr(base.length() - TRE_EXT.length()) == TRE_EXT) {
+            base = base.substr(0, base.length() - TRE_EXT.length());
           }
           return base + stored_ext;
         }
@@ -382,10 +382,10 @@ std::string auto_generate_output_filename(std::string_view input,
   }
 
   // Fallback
-  if (input.length() > 4 && input.substr(input.length() - 4) == ".qre") {
+  if (input.length() > 4 && input.substr(input.length() - 4) == ".tre") {
     return std::string(input.substr(0, input.length() - 4)) + ".txt";
   }
   return input_str + "_decrypted.txt";
 }
 
-} // namespace QRE
+} // namespace TRE

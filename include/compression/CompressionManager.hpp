@@ -10,7 +10,7 @@
 #include <vector>
 #include <zstd.h>
 
-namespace QRE {
+namespace TRE {
 
 // Compression levels
 enum class CompressionLevel : uint8_t {
@@ -207,4 +207,4 @@ decompress_data(const std::vector<unsigned char> &compressed,
   return true;
 }
 
-} // namespace QRE
+} // namespace TRE

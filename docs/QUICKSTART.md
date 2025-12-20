@@ -1,32 +1,32 @@
-# QRE V4.0 - Quick Start Guide
+# TRE V4.0 - Quick Start Guide
 
 **Get started in 60 seconds!**
 
 ---
 
-## 🎨 GUI Quick Start (V4.0)
+## GUI Quick Start (V4.0)
 
 ### Launch GUI
 ```bash
 cd build
-./qre-gui
+./tre-gui
 ```
 
 ### Encrypt a File
 1. **Select File**: Drag & drop or click "Browse"
 2. **Enter Password**: Must meet requirements (16+ chars, mixed case, digits, symbols)
 3. **Click "ENCRYPT"**: Wait for success message
-4. **Output**: `filename.qre` created in same directory
+4. **Output**: `filename.tre` created in same directory
 
 ### Decrypt a File
-1. **Select `.qre` File**: Drag & drop or browse
+1. **Select `.tre` File**: Drag & drop or browse
 2. **Enter Password**: Same password used for encryption
 3. **Click "DECRYPT"**: Original file restored
 4. **Output**: Original file with original extension
 
 ---
 
-## ⚡ Installation
+## Installation
 
 ### Step 1: Install Dependencies
 ```bash
@@ -39,54 +39,54 @@ sudo ./scripts/install_dependencies.sh
 mkdir -p build && cd build
 cmake ..
 make
-# Binary is now at: build/qre
+# Binary is now at: build/tre
 ```
 
 ### Step 3: Move Binary (Optional)
 ```bash
-sudo cp qre /usr/local/bin/
+sudo cp tre /usr/local/bin/
 ```
 
 ---
 
-## 🎯 Basic Usage
+## Basic Usage
 
 ### Encrypt Any File
 ```bash
-qre encrypt photo.jpg
-# Creates: photo.qre
+tre encrypt photo.jpg
+# Creates: photo.tre
 ```
 
 ### Encrypt with Compression (NEW in V4.0!)
 ```bash
 # Balanced compression (recommended)
-qre encrypt document.pdf --compress
+tre encrypt document.pdf --compress
 
 # Fast compression
-qre encrypt video.mp4 --compress-fast
+tre encrypt video.mp4 --compress-fast
 
 # Maximum compression (smaller files)
-qre encrypt logs.txt --compress-max
+tre encrypt logs.txt --compress-max
 
 # Ultra compression (best ratio)
-qre encrypt database.sql --compress-ultra
+tre encrypt database.sql --compress-ultra
 ```
 
 ### Decrypt (automatic decompression)
 ```bash
-qre decrypt photo.qre
+tre decrypt photo.tre
 # Restores: photo.jpg (auto-detects compression)
 ```
 
 ### Custom Output
 ```bash
-qre encrypt video.mp4 secure.qre --compress
-qre decrypt secure.qre restored.mp4
+tre encrypt video.mp4 secure.tre --compress
+tre decrypt secure.tre restored.mp4
 ```
 
 ---
 
-## 🔒 Password Requirements
+## Password Requirements
 
 - Minimum 16 characters
 - At least 2 uppercase letters
@@ -99,7 +99,7 @@ qre decrypt secure.qre restored.mp4
 
 ---
 
-## 📁 Supported File Types
+## Supported File Types
 
 **ALL file types supported:**
 - Documents: PDF, DOCX, TXT, MD
@@ -110,7 +110,7 @@ qre decrypt secure.qre restored.mp4
 
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Build fails?
 ```bash
@@ -124,18 +124,18 @@ cmake .. && make
 
 ### Permission denied?
 ```bash
-chmod +x qre
+chmod +x tre
 # Or move to system path
-sudo cp qre /usr/local/bin/
+sudo cp tre /usr/local/bin/
 ```
 
 ---
 
-## 🚀 Advanced
+## Advanced
 
 ### Verbose Output
 ```bash
-qre encrypt file.zip --compress --verbose
+tre encrypt file.zip --compress --verbose
 ```
 
 ### Compression Comparison
@@ -144,18 +144,18 @@ qre encrypt file.zip --compress --verbose
 cp data.txt test1.txt test2.txt test3.txt
 
 # Encrypt with different levels
-qre encrypt test1.txt out1.qre                 # No compression
-qre encrypt test2.txt out2.qre --compress-fast # Fast
-qre encrypt test3.txt out3.qre --compress-max  # Maximum
+tre encrypt test1.txt out1.tre                 # No compression
+tre encrypt test2.txt out2.tre --compress-fast # Fast
+tre encrypt test3.txt out3.tre --compress-max  # Maximum
 
 # Compare sizes
-ls -lh out*.qre
+ls -lh out*.tre
 ```
 
 ### Batch Encryption
 ```bash
 for file in *.pdf; do
-    qre encrypt "$file" --compress
+    tre encrypt "$file" --compress
 done
 ```
 

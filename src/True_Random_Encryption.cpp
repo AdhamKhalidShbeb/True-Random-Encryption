@@ -17,7 +17,7 @@
 #include "core/CryptoCore.hpp"
 #include "entropy/EntropyManager.hpp"
 
-using namespace QRE;
+using namespace TRE;
 
 // Global configuration
 namespace {
@@ -267,7 +267,7 @@ void perform_decryption(const std::string &input_file,
   unsigned char version = 0;
   infile.read(reinterpret_cast<char *>(&version), 1);
   if (version != FILE_FORMAT_VERSION) {
-    std::cerr << "Error: Unsupported file version or not a QRE file.\n";
+    std::cerr << "Error: Unsupported file version or not a TRE file.\n";
     std::exit(1);
   }
 
@@ -331,7 +331,7 @@ void perform_decryption(const std::string &input_file,
 //
 
 void print_usage(const char *prog_name) {
-  std::cout << "Quantum Random Encryption (QRE) v4.0\n"
+  std::cout << "True Random Encryption (TRE) v4.0\n"
             << "Usage: " << prog_name << " <command> [options] <file>\n\n"
             << "Commands:\n"
             << "  encrypt <file>   Encrypt a file\n"

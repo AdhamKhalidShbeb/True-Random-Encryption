@@ -15,9 +15,9 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
 
   // Set application metadata
-  app.setApplicationName("Quantum Random Encryption");
+  app.setApplicationName("True Random Encryption");
   app.setApplicationVersion("4.0");
-  app.setOrganizationName("QRE Team");
+  app.setOrganizationName("TRE Team");
 
   MainWindow window;
   window.show();

@@ -15,14 +15,14 @@ moc_*.cpp
 ui_*.h
 
 # Executables
-qre
-qre-gui
-bin/qre
-bin/qre-gui
+tre
+tre-gui
+bin/tre
+bin/tre-gui
 
 # Test files
 test*.txt
-*.qre
+*.tre
 
 # IDE
 .vscode/
