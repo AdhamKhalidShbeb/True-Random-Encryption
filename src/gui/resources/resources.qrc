@@ -2,6 +2,7 @@
 <qresource>
     <file>eye_open.png</file>
     <file>eye_closed.png</file>
+    <file>down_arrow_neon.png</file>
     <file>style.qss</file>
 </qresource>
 </RCC>

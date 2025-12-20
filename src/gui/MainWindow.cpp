@@ -24,7 +24,8 @@ MainWindow::~MainWindow() {}
 
 void MainWindow::setupUi() {
   setWindowTitle("True Random Encryption");
-  setMinimumSize(450, 600);
+  setMinimumSize(450, 650);
+  setMaximumHeight(650);
   resize(500, 650);
 
   // The content widget that holds the actual UI
@@ -146,9 +147,7 @@ void MainWindow::setupUi() {
   QLabel *compLabel = new QLabel("Compression:", this);
   compressionCombo_ = new QComboBox(this);
   compressionCombo_->setObjectName("compressionCombo");
-  compressionCombo_->setEditable(true);
-  compressionCombo_->lineEdit()->setReadOnly(true);
-  compressionCombo_->lineEdit()->setAlignment(Qt::AlignCenter);
+  compressionCombo_->setMinimumWidth(120);
   compressionCombo_->addItem("None", 0);
   compressionCombo_->addItem("Fast", 1);
   compressionCombo_->addItem("Balanced", 2);
