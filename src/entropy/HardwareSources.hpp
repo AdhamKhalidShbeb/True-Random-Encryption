@@ -2,14 +2,54 @@
 #define HARDWARE_SOURCES_HPP
 
 #include "EntropySource.hpp"
-#include <cpuid.h>
 #include <cstring>
 #include <fstream>
-#include <immintrin.h>
 #include <iostream>
+
+// Cross-platform CPUID detection
+#if defined(_MSC_VER)
+// MSVC
+#include <intrin.h>
+#define TRE_CPUID(leaf, eax, ebx, ecx, edx)                                    \
+  do {                                                                         \
+    int cpuInfo[4];                                                            \
+    __cpuid(cpuInfo, leaf);                                                    \
+    eax = cpuInfo[0];                                                          \
+    ebx = cpuInfo[1];                                                          \
+    ecx = cpuInfo[2];                                                          \
+    edx = cpuInfo[3];                                                          \
+  } while (0)
+#define TRE_HAS_RDRAND()                                                       \
+  ([] {                                                                        \
+    int cpuInfo[4];                                                            \
+    __cpuid(cpuInfo, 1);                                                       \
+    return (cpuInfo[2] & (1 << 30)) != 0;                                      \
+  }())
+#else
+// GCC/Clang (Linux and macOS)
+#include <cpuid.h>
+#define TRE_CPUID(leaf, eax, ebx, ecx, edx)                                    \
+  __get_cpuid(leaf, &eax, &ebx, &ecx, &edx)
+#define TRE_HAS_RDRAND()                                                       \
+  ([] {                                                                        \
+    unsigned int eax, ebx, ecx, edx;                                           \
+    if (__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {                              \
+      return (ecx & (1U << 30)) != 0;                                          \
+    }                                                                          \
+    return false;                                                              \
+  }())
+#endif
+
+// RDRAND intrinsics (cross-platform)
+#if defined(_MSC_VER)
+#include <immintrin.h>
+#else
+#include <immintrin.h>
+#endif
 
 //
 // CPU Hardware RNG (RDRAND)
+// Uses CPU thermal noise for true randomness
 //
 class CpuRngSource final : public EntropySource {
 public:
@@ -18,12 +58,7 @@ public:
   }
 
   [[nodiscard]] bool is_available() noexcept override {
-    unsigned int eax, ebx, ecx, edx;
-    // Check for RDRAND support (Leaf 1, ECX bit 30)
-    if (__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {
-      return (ecx & (1U << 30)) != 0;
-    }
-    return false;
+    return TRE_HAS_RDRAND();
   }
 
   [[nodiscard]] std::vector<unsigned char>
@@ -61,7 +96,9 @@ public:
 
 //
 // Device Hardware RNG (/dev/hwrng)
+// Only available on Linux systems with hardware RNG devices
 //
+#if defined(__linux__)
 class DeviceRngSource final : public EntropySource {
 public:
   [[nodiscard]] std::string name() const noexcept override {
@@ -93,5 +130,6 @@ public:
 
   [[nodiscard]] int priority() const noexcept override { return 90; }
 };
+#endif // __linux__
 
 #endif // HARDWARE_SOURCES_HPP

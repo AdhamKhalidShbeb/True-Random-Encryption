@@ -1,23 +1,41 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <fcntl.h>
 #include <fstream>
 #include <iostream>
 #include <sodium.h>
 #include <string>
 #include <string_view>
-#include <sys/mman.h>
-#include <sys/stat.h>
+#include <vector>
+
+// Platform-specific includes for terminal handling
+#if defined(_WIN32) || defined(_WIN64)
+#define TRE_CLI_WINDOWS 1
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <conio.h>
+#include <windows.h>
+#else
+// POSIX (Linux and macOS)
 #include <termios.h>
 #include <unistd.h>
-#include <vector>
+#endif
 
 #include "compression/CompressionManager.hpp"
 #include "core/CryptoCore.hpp"
 #include "entropy/EntropyManager.hpp"
 
 using namespace TRE;
+
+// Cross-platform sleep function
+inline void secure_delay(unsigned int seconds) {
+#ifdef TRE_CLI_WINDOWS
+  Sleep(seconds * 1000); // Windows Sleep takes milliseconds
+#else
+  sleep(seconds);
+#endif
+}
 
 // Global configuration
 namespace {
@@ -39,6 +57,17 @@ inline void vlog(std::string_view msg) {
 class TerminalEchoGuard {
 public:
   TerminalEchoGuard() {
+#ifdef TRE_CLI_WINDOWS
+    hStdin_ = GetStdHandle(STD_INPUT_HANDLE);
+    if (hStdin_ != INVALID_HANDLE_VALUE) {
+      if (GetConsoleMode(hStdin_, &oldMode_)) {
+        DWORD newMode = oldMode_ & ~ENABLE_ECHO_INPUT;
+        if (SetConsoleMode(hStdin_, newMode)) {
+          active_ = true;
+        }
+      }
+    }
+#else
     if (tcgetattr(STDIN_FILENO, &old_term_) == 0) {
       struct termios new_term = old_term_;
       new_term.c_lflag &= ~static_cast<tcflag_t>(ECHO);
@@ -46,11 +75,16 @@ public:
         active_ = true;
       }
     }
+#endif
   }
 
   ~TerminalEchoGuard() {
     if (active_) {
+#ifdef TRE_CLI_WINDOWS
+      SetConsoleMode(hStdin_, oldMode_);
+#else
       tcsetattr(STDIN_FILENO, TCSANOW, &old_term_);
+#endif
     }
   }
 
@@ -61,7 +95,12 @@ public:
   TerminalEchoGuard &operator=(TerminalEchoGuard &&) = delete;
 
 private:
+#ifdef TRE_CLI_WINDOWS
+  HANDLE hStdin_ = INVALID_HANDLE_VALUE;
+  DWORD oldMode_ = 0;
+#else
   struct termios old_term_{};
+#endif
   bool active_ = false;
 };
 
@@ -100,7 +139,7 @@ void show_password_requirements() {
     }
 
     // Rate limiting delay
-    sleep(4);
+    secure_delay(4);
 
     std::string error_msg;
     if (!validate_password(temp_password, error_msg)) {
@@ -120,7 +159,7 @@ void show_password_requirements() {
   std::string temp_password = get_password_hidden();
 
   // Rate limiting delay
-  sleep(4);
+  secure_delay(4);
 
   SecurePassword password;
   password.set(temp_password.c_str(), temp_password.length());

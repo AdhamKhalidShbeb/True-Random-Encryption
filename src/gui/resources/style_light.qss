@@ -1,0 +1,300 @@
+/* ============================================
+   True Random Encryption - Light Mode: The Clinical Lab
+   ============================================ */
+
+/* === GLOBAL STYLES === */
+QMainWindow {
+    background-color: #F2F4F7; /* Cool Ash */
+    color: #1A1C21; /* Ink */
+}
+
+QWidget {
+    font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
+    font-size: 12px;
+    color: #1A1C21;
+}
+
+/* === TITLE === */
+QLabel#titleLabel {
+    font-size: 22px;
+    font-weight: 800;
+    color: #E69500; /* Deep Amber */
+    padding: 8px;
+    background: transparent;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+QLabel#subtitleLabel {
+    font-size: 12px;
+    color: #555555;
+    margin-bottom: 10px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+}
+
+/* === GROUP BOXES === */
+QGroupBox {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    margin-top: 15px;
+    padding: 8px;
+    padding-top: 20px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 3px 10px;
+    background-color: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    border-radius: 2px;
+    color: #E69500; /* Deep Amber */
+    font-weight: 700;
+    left: 12px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* === FILE LIST === */
+QFrame#listFrame {
+    background-color: #F9FAFB;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+}
+
+QListWidget#fileList {
+    background-color: transparent;
+    border: none;
+    color: #1A1C21;
+    outline: none;
+    min-height: 120px;
+}
+
+QListWidget#fileList::item {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 1px;
+    border: none;
+    background-color: transparent;
+}
+
+QListWidget#fileList::item:hover {
+    background-color: rgba(230, 149, 0, 0.1);
+}
+
+QListWidget#fileList::item:selected {
+    background-color: rgba(230, 149, 0, 0.2);
+    color: #000000;
+}
+
+/* === LINE EDIT === */
+QLineEdit {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: #1A1C21;
+    font-size: 12px;
+    selection-background-color: #E69500;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:focus {
+    border: 1px solid #E69500;
+}
+
+/* === BUTTONS === */
+QPushButton {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    padding: 4px 12px;
+    color: #1A1C21;
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+QPushButton:hover {
+    background-color: #F3F4F6;
+    border: 1px solid #E69500;
+    color: #000000;
+}
+
+QPushButton:pressed {
+    background-color: #E5E7EB;
+}
+
+/* Primary Action Buttons */
+QPushButton#encryptButton, QPushButton#decryptButton {
+    font-size: 14px;
+    font-weight: 800;
+    padding: 12px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+QPushButton#encryptButton {
+    background-color: #E69500; /* Deep Amber */
+    border: 1px solid #E69500;
+    color: #FFFFFF;
+}
+
+QPushButton#encryptButton:hover {
+    background-color: #FFB000;
+}
+
+QPushButton#decryptButton {
+    background-color: transparent;
+    border: 1px solid #E69500;
+    color: #E69500;
+}
+
+QPushButton#decryptButton:hover {
+    background-color: rgba(230, 149, 0, 0.1);
+}
+
+/* Toggle Password Button */
+QPushButton#togglePasswordButton {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+}
+
+QPushButton#togglePasswordButton:hover {
+    background-color: rgba(230, 149, 0, 0.1);
+}
+
+/* === COMBO BOX === */
+QComboBox {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    padding: 4px 10px;
+    color: #1A1C21;
+}
+
+QComboBox:hover {
+    border: 1px solid #E69500;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 24px;
+    border-left: 1px solid #D1D5DB;
+    background: transparent;
+}
+
+QComboBox::down-arrow {
+    image: url(:/combo_arrow.svg);
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 1px solid #E69500;
+    selection-background-color: #E69500;
+    selection-color: #FFFFFF;
+    color: #1A1C21;
+    outline: none;
+}
+
+/* === CHECKBOX === */
+QCheckBox {
+    spacing: 10px;
+    color: #1A1C21;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+    border: 1px solid #D1D5DB;
+    background-color: #FFFFFF;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #E69500;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #E69500;
+    border: 1px solid #E69500;
+}
+
+/* === PROGRESS BARS === */
+QProgressBar {
+    background-color: #E5E7EB;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    text-align: center;
+    color: #1A1C21;
+    font-weight: 700;
+}
+
+QProgressBar::chunk {
+    background-color: #E69500;
+    border-radius: 2px;
+}
+
+QProgressBar#strengthBar {
+    border: none;
+    background-color: #E5E7EB;
+    height: 6px;
+}
+
+/* === STATUS LABELS === */
+QLabel#statusLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1A1C21;
+    padding: 8px;
+    background-color: #FFFFFF;
+    border-radius: 4px;
+    border: 1px solid #D1D5DB;
+}
+
+QLabel#detailLabel {
+    font-size: 11px;
+    color: #555555;
+}
+
+QLabel#fileTypeLabel {
+    color: rgba(230, 149, 0, 0.4);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+/* === SCROLLBAR === */
+QScrollBar:vertical {
+    background: #F2F4F7;
+    width: 12px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #D1D5DB;
+    min-height: 25px;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #E69500;
+}
+
+/* === TOOLTIPS === */
+QToolTip {
+    background-color: #FFFFFF;
+    border: 1px solid #E69500;
+    color: #1A1C21;
+    padding: 6px;
+    border-radius: 4px;
+}

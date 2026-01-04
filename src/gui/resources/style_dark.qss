@@ -1,0 +1,301 @@
+/* ============================================
+   True Random Encryption - Dark Mode: The Stealth Fortress
+   ============================================ */
+
+/* === GLOBAL STYLES === */
+QMainWindow {
+    background-color: #0F1115; /* Gunmetal Void */
+    color: #E0E0E0;
+}
+
+QWidget {
+    font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
+    font-size: 12px;
+    color: #E0E0E0;
+}
+
+/* === TITLE === */
+QLabel#titleLabel {
+    font-size: 22px;
+    font-weight: 800;
+    color: #FFB000; /* Safety Amber */
+    padding: 8px;
+    background: transparent;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+QLabel#subtitleLabel {
+    font-size: 12px;
+    color: #888888;
+    margin-bottom: 10px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+}
+
+/* === GROUP BOXES === */
+QGroupBox {
+    background-color: #1E2329; /* Armor Grey */
+    border: 1px solid #2D343C;
+    border-radius: 4px;
+    margin-top: 15px;
+    padding: 8px;
+    padding-top: 20px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 3px 10px;
+    background-color: #1E2329;
+    border: 1px solid #2D343C;
+    border-radius: 2px;
+    color: #FFB000; /* Safety Amber */
+    font-weight: 700;
+    left: 12px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* === FILE LIST === */
+QFrame#listFrame {
+    background-color: #0F1115;
+    border: 1px solid #2D343C;
+    border-radius: 4px;
+}
+
+QListWidget#fileList {
+    background-color: transparent;
+    border: none;
+    color: #E0E0E0;
+    outline: none;
+    min-height: 120px;
+}
+
+QListWidget#fileList::item {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 1px;
+    border: none;
+    background-color: transparent;
+}
+
+QListWidget#fileList::item:hover {
+    background-color: rgba(255, 176, 0, 0.1);
+}
+
+QListWidget#fileList::item:selected {
+    background-color: rgba(255, 176, 0, 0.2);
+    color: #FFFFFF;
+}
+
+/* === LINE EDIT === */
+QLineEdit {
+    background-color: #0F1115;
+    border: 1px solid #2D343C;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: #FFFFFF;
+    font-size: 12px;
+    selection-background-color: #FFB000;
+    selection-color: #000000;
+}
+
+QLineEdit:focus {
+    border: 1px solid #FFB000;
+}
+
+/* === BUTTONS === */
+QPushButton {
+    background-color: #1E2329;
+    border: 1px solid #2D343C;
+    border-radius: 4px;
+    padding: 4px 12px;
+    color: #E0E0E0;
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+QPushButton:hover {
+    background-color: #2D343C;
+    border: 1px solid #FFB000;
+    color: #FFFFFF;
+}
+
+QPushButton:pressed {
+    background-color: #0F1115;
+}
+
+/* Primary Action Buttons */
+QPushButton#encryptButton, QPushButton#decryptButton {
+    font-size: 14px;
+    font-weight: 800;
+    padding: 12px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+QPushButton#encryptButton {
+    background-color: #FFB000; /* Safety Amber */
+    border: 1px solid #FFB000;
+    color: #000000;
+}
+
+QPushButton#encryptButton:hover {
+    background-color: #FFC033;
+}
+
+QPushButton#decryptButton {
+    background-color: transparent;
+    border: 1px solid #FFB000;
+    color: #FFB000;
+}
+
+QPushButton#decryptButton:hover {
+    background-color: rgba(255, 176, 0, 0.1);
+}
+
+/* Toggle Password Button */
+QPushButton#togglePasswordButton {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+}
+
+QPushButton#togglePasswordButton:hover {
+    background-color: rgba(255, 176, 0, 0.1);
+}
+
+/* === COMBO BOX === */
+QComboBox {
+    background-color: #0F1115;
+    border: 1px solid #2D343C;
+    border-radius: 4px;
+    padding: 4px 10px;
+    color: #FFFFFF;
+}
+
+QComboBox:hover {
+    border: 1px solid #FFB000;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 24px;
+    border-left: 1px solid #2D343C;
+    background: transparent;
+}
+
+QComboBox::down-arrow {
+    image: url(:/combo_arrow.svg);
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #1E2329;
+    border: 1px solid #FFB000;
+    selection-background-color: #FFB000;
+    selection-color: #000000;
+    color: #FFFFFF;
+    outline: none;
+}
+
+/* === CHECKBOX === */
+QCheckBox {
+    spacing: 10px;
+    color: #E0E0E0;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+    border: 1px solid #2D343C;
+    background-color: #0F1115;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #FFB000;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #FFB000;
+    border: 1px solid #FFB000;
+    image: url(:/check_mark.svg); /* Assuming we might add one, or use standard */
+}
+
+/* === PROGRESS BARS === */
+QProgressBar {
+    background-color: #0F1115;
+    border: 1px solid #2D343C;
+    border-radius: 4px;
+    text-align: center;
+    color: #FFFFFF;
+    font-weight: 700;
+}
+
+QProgressBar::chunk {
+    background-color: #FFB000;
+    border-radius: 2px;
+}
+
+QProgressBar#strengthBar {
+    border: none;
+    background-color: #0F1115;
+    height: 6px;
+}
+
+/* === STATUS LABELS === */
+QLabel#statusLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #FFFFFF;
+    padding: 8px;
+    background-color: #1E2329;
+    border-radius: 4px;
+    border: 1px solid #2D343C;
+}
+
+QLabel#detailLabel {
+    font-size: 11px;
+    color: #888888;
+}
+
+QLabel#fileTypeLabel {
+    color: rgba(255, 176, 0, 0.4);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+/* === SCROLLBAR === */
+QScrollBar:vertical {
+    background: #0F1115;
+    width: 12px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #2D343C;
+    min-height: 25px;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #FFB000;
+}
+
+/* === TOOLTIPS === */
+QToolTip {
+    background-color: #1E2329;
+    border: 1px solid #FFB000;
+    color: #FFFFFF;
+    padding: 6px;
+    border-radius: 4px;
+}

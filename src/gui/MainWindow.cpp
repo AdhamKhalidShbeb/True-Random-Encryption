@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QGroupBox>
 #include <QScrollArea>
+#include <QSettings>
 #include <QStyle>
 #include <QThread>
 #include <fstream>
@@ -16,7 +17,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentCompression_(0), isVerbose_(false),
       secureDelete_(false) {
   setupUi();
-  applyTheme();
+  currentTheme_ = loadThemePreference();
+  applyTheme(currentTheme_);
   setAcceptDrops(true);
 }
 
@@ -37,10 +39,25 @@ void MainWindow::setupUi() {
   mainLayout->setContentsMargins(15, 15, 15, 15);
 
   // ===== HEADER =====
+  QHBoxLayout *headerLayout = new QHBoxLayout();
+  headerLayout->setContentsMargins(0, 0, 0, 0);
+
   QLabel *titleLabel = new QLabel("True Random Encryption", this);
   titleLabel->setObjectName("titleLabel");
   titleLabel->setAlignment(Qt::AlignCenter);
-  mainLayout->addWidget(titleLabel);
+
+  themeToggleButton_ = new QPushButton(this);
+  themeToggleButton_->setObjectName("themeToggleButton");
+  themeToggleButton_->setFixedSize(32, 32);
+  themeToggleButton_->setToolTip("Toggle Dark/Light Mode");
+  themeToggleButton_->setCursor(Qt::PointingHandCursor);
+
+  headerLayout->addStretch(1);
+  headerLayout->addWidget(titleLabel);
+  headerLayout->addStretch(1);
+  headerLayout->addWidget(themeToggleButton_);
+
+  mainLayout->addLayout(headerLayout);
 
   QLabel *subtitleLabel = new QLabel(
       "Military-Grade File Encryption with Hardware True-Randomness", this);
@@ -65,6 +82,7 @@ void MainWindow::setupUi() {
   fileListWidget_->setObjectName("fileList");
   fileListWidget_->setMinimumHeight(120);
   fileListWidget_->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  fileListWidget_->setIconSize(QSize(32, 32));
 
   fileTypeLabel_ = new QLabel("DROP FILES OR FOLDERS HERE", listFrame);
   fileTypeLabel_->setObjectName("fileTypeLabel");
@@ -114,8 +132,8 @@ void MainWindow::setupUi() {
   togglePasswordButton_->setFixedWidth(32);
   togglePasswordButton_->setFixedHeight(32);
   togglePasswordButton_->setCheckable(true);
-  togglePasswordButton_->setIcon(QIcon(":/eye_closed.png"));
-  togglePasswordButton_->setIconSize(QSize(24, 24));
+  togglePasswordButton_->setIcon(QIcon(":/eye_closed.svg"));
+  togglePasswordButton_->setIconSize(QSize(18, 18));
   togglePasswordButton_->setToolTip("Show/Hide Password");
 
   passInputLayout->addWidget(passwordEdit_);
@@ -223,13 +241,41 @@ void MainWindow::setupUi() {
   connect(compressionCombo_,
           QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &MainWindow::onCompressionChanged);
+  connect(themeToggleButton_, &QPushButton::clicked, this,
+          &MainWindow::onToggleTheme);
 }
 
-void MainWindow::applyTheme() {
-  QFile file(":/style.qss");
+void MainWindow::applyTheme(Theme theme) {
+  QString qssFile =
+      (theme == Theme::Dark) ? ":/style_dark.qss" : ":/style_light.qss";
+  QFile file(qssFile);
   if (file.open(QFile::ReadOnly)) {
     qApp->setStyleSheet(QLatin1String(file.readAll()));
   }
+
+  // Update toggle button icon/text
+  if (theme == Theme::Dark) {
+    themeToggleButton_->setText("🌙");
+  } else {
+    themeToggleButton_->setText("☀️");
+  }
+}
+
+void MainWindow::onToggleTheme() {
+  currentTheme_ = (currentTheme_ == Theme::Dark) ? Theme::Light : Theme::Dark;
+  applyTheme(currentTheme_);
+  saveThemePreference(currentTheme_);
+}
+
+void MainWindow::saveThemePreference(Theme theme) {
+  QSettings settings("TRE", "TrueRandomEncryption");
+  settings.setValue("theme", (theme == Theme::Dark) ? "dark" : "light");
+}
+
+MainWindow::Theme MainWindow::loadThemePreference() {
+  QSettings settings("TRE", "TrueRandomEncryption");
+  QString themeStr = settings.value("theme", "dark").toString();
+  return (themeStr == "light") ? Theme::Light : Theme::Dark;
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
@@ -272,10 +318,8 @@ void MainWindow::addFilesToList(const QStringList &paths) {
   for (const QString &path : paths) {
     QFileInfo info(path);
     if (info.exists()) {
-      QString icon = info.isDir() ? "[DIR] " : "[FILE] ";
-      QString displayName = icon + info.fileName();
-
-      QListWidgetItem *item = new QListWidgetItem(displayName);
+      QListWidgetItem *item = new QListWidgetItem(info.fileName());
+      item->setIcon(getFileIcon(info));
       item->setData(Qt::UserRole, path);
       item->setToolTip(path);
       fileListWidget_->addItem(item);
@@ -301,7 +345,7 @@ void MainWindow::onTogglePasswordVisibility() {
   bool checked = togglePasswordButton_->isChecked();
   passwordEdit_->setEchoMode(checked ? QLineEdit::Normal : QLineEdit::Password);
   togglePasswordButton_->setIcon(
-      QIcon(checked ? ":/eye_open.png" : ":/eye_closed.png"));
+      QIcon(checked ? ":/eye_open.svg" : ":/eye_closed.svg"));
 }
 
 void MainWindow::onPasswordChanged(const QString &text) {
@@ -420,6 +464,72 @@ void MainWindow::setProgress(int value, int max) {
   progressBar_->setValue(value);
 }
 
+QIcon MainWindow::getFileIcon(const QFileInfo &info) {
+  if (info.isDir()) {
+    return QIcon(":/folder.svg");
+  }
+
+  QString ext = info.suffix().toLower();
+
+  // Audio
+  if (ext == "mp3" || ext == "wav" || ext == "flac" || ext == "ogg" ||
+      ext == "m4a" || ext == "aac" || ext == "wma" || ext == "alac") {
+    return QIcon(":/file_audio.svg");
+  }
+
+  // Video
+  if (ext == "mp4" || ext == "mkv" || ext == "avi" || ext == "mov" ||
+      ext == "wmv" || ext == "flv" || ext == "webm" || ext == "m4v") {
+    return QIcon(":/file_video.svg");
+  }
+
+  // Image
+  if (ext == "jpg" || ext == "jpeg" || ext == "png" || ext == "gif" ||
+      ext == "bmp" || ext == "webp" || ext == "svg" || ext == "ico" ||
+      ext == "tiff" || ext == "psd" || ext == "ai") {
+    return QIcon(":/file_image.svg");
+  }
+
+  // Code
+  if (ext == "cpp" || ext == "hpp" || ext == "c" || ext == "h" || ext == "py" ||
+      ext == "js" || ext == "ts" || ext == "java" || ext == "go" ||
+      ext == "rs" || ext == "sh" || ext == "bat" || ext == "cmake" ||
+      ext == "qss" || ext == "qrc" || ext == "html" || ext == "css" ||
+      ext == "json" || ext == "xml" || ext == "yaml" || ext == "sql" ||
+      ext == "php" || ext == "rb" || ext == "cs" || ext == "swift") {
+    return QIcon(":/file_code.svg");
+  }
+
+  // Document
+  if (ext == "pdf" || ext == "doc" || ext == "docx" || ext == "txt" ||
+      ext == "rtf" || ext == "odt" || ext == "tex" || ext == "md" ||
+      ext == "pages" || ext == "log") {
+    return QIcon(":/file_doc.svg");
+  }
+
+  // Spreadsheet
+  if (ext == "xls" || ext == "xlsx" || ext == "ods" || ext == "csv" ||
+      ext == "numbers") {
+    return QIcon(":/file_excel.svg");
+  }
+
+  // Archive
+  if (ext == "zip" || ext == "rar" || ext == "7z" || ext == "tar" ||
+      ext == "gz" || ext == "bz2" || ext == "xz" || ext == "iso") {
+    return QIcon(":/file_archive.svg");
+  }
+
+  // Executable
+  if (ext == "exe" || ext == "msi" || ext == "bin" || ext == "appimage" ||
+      ext == "deb" || ext == "rpm" || ext == "sh" || ext == "bat" ||
+      ext == "com" || ext == "cmd") {
+    return QIcon(":/file_exe.svg");
+  }
+
+  // Default
+  return QIcon(":/file.svg");
+}
+
 void MainWindow::onEncrypt() {
   if (fileListWidget_->count() == 0) {
     QMessageBox::warning(this, "Error",
@@ -477,6 +587,9 @@ void MainWindow::onEncrypt() {
       std::vector<unsigned char> nonce =
           EntropyManager::get_instance().get_bytes(NONCE_SIZE);
 
+      // Wipe password from memory immediately after key derivation
+      secure_wipe_string(pass_str);
+
       std::vector<unsigned char> plaintext(
           (std::istreambuf_iterator<char>(infile)),
           std::istreambuf_iterator<char>());
@@ -492,6 +605,7 @@ void MainWindow::onEncrypt() {
       std::vector<unsigned char> ciphertext =
           encrypt_aes256gcm(plaintext, key, nonce);
       secure_wipe_vector(plaintext);
+      secure_wipe_vector(key); // Wipe key from memory after use
 
       // Extract extension for storage
       std::string ext = extract_extension(input_path);
@@ -594,6 +708,11 @@ void MainWindow::onDecrypt() {
 
       unsigned char ext_len;
       infile.read(reinterpret_cast<char *>(&ext_len), 1);
+
+      // Validate extension length to prevent malformed file attacks
+      if (ext_len >= 32)
+        throw std::runtime_error("Invalid extension length in file header");
+
       std::string stored_ext;
       if (ext_len > 0) {
         stored_ext.resize(ext_len);
@@ -617,8 +736,15 @@ void MainWindow::onDecrypt() {
 
       std::vector<unsigned char> key =
           derive_key(pass_str.c_str(), pass_str.size(), salt);
+
+      // Wipe password from memory immediately after key derivation
+      secure_wipe_string(pass_str);
+
       std::vector<unsigned char> plaintext =
           decrypt_aes256gcm(ciphertext, key, nonce);
+
+      // Wipe key from memory after use
+      secure_wipe_vector(key);
 
       if (plaintext.empty())
         throw std::runtime_error("Decryption failed (wrong password?)");
@@ -643,6 +769,10 @@ void MainWindow::onDecrypt() {
     } catch (const std::exception &e) {
       failed++;
       detailLabel_->setText(QString("Error: %1").arg(e.what()));
+
+      // Rate limiting: delay after failed decryption to slow brute-force
+      // attacks
+      QThread::msleep(2000);
     }
   }
 

@@ -6,9 +6,14 @@
 
 EntropyManager::EntropyManager() {
   // Register all known sources (offline-only, true randomness only)
-  // Priority order: CPU RDRAND (100) > Device HW RNG (90) > /dev/random (50)
+  // Priority order: CPU RDRAND (100) > Device HW RNG (90) > System RNG (50)
   sources.push_back(std::make_unique<CpuRngSource>());
+
+#if defined(__linux__)
+  // /dev/hwrng is only available on Linux
   sources.push_back(std::make_unique<DeviceRngSource>());
+#endif
+
   sources.push_back(std::make_unique<RandomSource>());
 
   // Sort by priority (descending)

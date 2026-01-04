@@ -1,13 +1,10 @@
 #include "CryptoCore.hpp"
+#include "../platform/Platform.hpp"
 #include "password_blacklist.hpp"
 #include <algorithm>
 #include <cctype>
 #include <cstring>
-#include <fcntl.h>
 #include <fstream>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 namespace TRE {
 
@@ -30,42 +27,43 @@ void secure_wipe_vector(std::vector<unsigned char> &v) noexcept {
 }
 
 bool secure_delete_file(const std::string &filename) {
-  const int fd = open(filename.c_str(), O_RDWR | O_NOFOLLOW);
+  const int fd = Platform::open_file_rw(filename.c_str());
   if (fd < 0) {
     return false;
   }
 
-  struct stat file_stat{};
-  if (fstat(fd, &file_stat) != 0) {
-    close(fd);
+  const int64_t filesize = Platform::get_file_size_fd(fd);
+  if (filesize < 0) {
+    Platform::close_file(fd);
     return false;
   }
-  const auto filesize = static_cast<size_t>(file_stat.st_size);
 
   if (filesize > 0) {
     // Seek to beginning before overwriting
-    if (lseek(fd, 0, SEEK_SET) < 0) {
-      close(fd);
+    if (Platform::seek_file(fd, 0, SEEK_SET) < 0) {
+      Platform::close_file(fd);
       return false;
     }
 
     constexpr size_t CHUNK_SIZE = 1024 * 1024;
-    std::vector<unsigned char> zeros(std::min(filesize, CHUNK_SIZE), 0);
+    std::vector<unsigned char> zeros(
+        std::min(static_cast<size_t>(filesize), CHUNK_SIZE), 0);
     size_t written = 0;
 
-    while (written < filesize) {
-      const size_t to_write = std::min(zeros.size(), filesize - written);
-      const ssize_t result = write(fd, zeros.data(), to_write);
+    while (written < static_cast<size_t>(filesize)) {
+      const size_t to_write =
+          std::min(zeros.size(), static_cast<size_t>(filesize) - written);
+      const int64_t result = Platform::write_file(fd, zeros.data(), to_write);
       if (result < 0) {
-        close(fd);
+        Platform::close_file(fd);
         return false;
       }
       written += static_cast<size_t>(result);
     }
-    fsync(fd);
+    Platform::sync_file(fd);
   }
 
-  close(fd);
+  Platform::close_file(fd);
   return remove(filename.c_str()) == 0;
 }
 
@@ -75,8 +73,14 @@ bool is_safe_path(const std::string &path) {
     return false;
   }
 
-  // Reject absolute paths
+  // Reject absolute paths (Unix-style)
   if (!path.empty() && path[0] == '/') {
+    return false;
+  }
+
+  // Reject absolute paths (Windows-style like C:\, D:\, etc.)
+  if (path.length() >= 2 && std::isalpha(static_cast<unsigned char>(path[0])) &&
+      path[1] == ':') {
     return false;
   }
 
@@ -103,16 +107,14 @@ SecurePassword::SecurePassword(size_t max_len)
     : data_(new char[max_len]), capacity_(max_len), length_(0) {
   std::memset(data_, 0, capacity_);
   // Attempt to lock memory (prevent swapping)
-  if (mlock(data_, capacity_) != 0) {
-    // Non-fatal: memory locking may fail without root privileges
-    // Password is still secure, just potentially swappable
-  }
+  // Uses VirtualLock on Windows, mlock on Linux/macOS
+  Platform::lock_memory(data_, capacity_);
 }
 
 SecurePassword::~SecurePassword() {
   if (data_) {
     sodium_memzero(data_, capacity_);
-    munlock(data_, capacity_);
+    Platform::unlock_memory(data_, capacity_);
     delete[] data_;
   }
 }
@@ -129,7 +131,7 @@ SecurePassword &SecurePassword::operator=(SecurePassword &&other) noexcept {
     // Clean up existing data
     if (data_) {
       sodium_memzero(data_, capacity_);
-      munlock(data_, capacity_);
+      Platform::unlock_memory(data_, capacity_);
       delete[] data_;
     }
 
@@ -165,7 +167,7 @@ std::vector<unsigned char> derive_key(const char *password, size_t password_len,
   }
 
   std::vector<unsigned char> key(KEY_SIZE);
-  const bool key_locked = (mlock(key.data(), KEY_SIZE) == 0);
+  const bool key_locked = Platform::lock_memory(key.data(), KEY_SIZE);
 
   // Argon2id parameters: 64MB memory, 3 iterations
   constexpr unsigned long long ARGON2_MEMORY = 64ULL * 1024 * 1024;
@@ -176,7 +178,7 @@ std::vector<unsigned char> derive_key(const char *password, size_t password_len,
                     crypto_pwhash_ALG_ARGON2ID13) != 0) {
     sodium_memzero(key.data(), KEY_SIZE);
     if (key_locked) {
-      munlock(key.data(), KEY_SIZE);
+      Platform::unlock_memory(key.data(), KEY_SIZE);
     }
     std::exit(1);
   }

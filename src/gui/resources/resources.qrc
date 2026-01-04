@@ -1,8 +1,20 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-    <file>eye_open.png</file>
-    <file>eye_closed.png</file>
-    <file>down_arrow_neon.png</file>
+    <file>eye_open.svg</file>
+    <file>eye_closed.svg</file>
+    <file>combo_arrow.svg</file>
+    <file>folder.svg</file>
+    <file>file.svg</file>
+    <file>file_audio.svg</file>
+    <file>file_video.svg</file>
+    <file>file_image.svg</file>
+    <file>file_code.svg</file>
+    <file>file_doc.svg</file>
+    <file>file_excel.svg</file>
+    <file>file_archive.svg</file>
+    <file>file_exe.svg</file>
+    <file>style_dark.qss</file>
+    <file>style_light.qss</file>
     <file>style.qss</file>
 </qresource>
 </RCC>

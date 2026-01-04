@@ -30,6 +30,8 @@ public:
   explicit MainWindow(QWidget *parent = nullptr);
   ~MainWindow() override;
 
+  enum class Theme { Dark, Light };
+
   MainWindow(const MainWindow &) = delete;
   MainWindow &operator=(const MainWindow &) = delete;
   MainWindow(MainWindow &&) = delete;
@@ -48,17 +50,20 @@ private slots:
   void onTogglePasswordVisibility();
   void onPasswordChanged(const QString &text);
   void onCompressionChanged(int index);
+  void onToggleTheme();
 
 private:
   void setupUi();
-  void applyTheme();
+  void applyTheme(Theme theme);
+  void saveThemePreference(Theme theme);
+  Theme loadThemePreference();
   void updateFileTypeLabel();
   void updatePasswordStrength(const QString &password);
   void addFilesToList(const QStringList &paths);
   bool isFolder(const QString &path);
   void setStatus(const QString &message, bool isError = false);
   void setProgress(int value, int max = 100);
-
+  QIcon getFileIcon(const QFileInfo &info);
   // UI Elements - Input
   QListWidget *fileListWidget_;
   QLabel *fileTypeLabel_;
@@ -80,6 +85,7 @@ private:
   // UI Elements - Actions
   QPushButton *encryptButton_;
   QPushButton *decryptButton_;
+  QPushButton *themeToggleButton_;
 
   // UI Elements - Status
   QProgressBar *progressBar_;
@@ -90,6 +96,7 @@ private:
   int currentCompression_;
   bool isVerbose_;
   bool secureDelete_;
+  Theme currentTheme_;
 };
 
 #endif // MAINWINDOW_HPP
