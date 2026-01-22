@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
-project(TrueRandomEncryption VERSION 4.0 LANGUAGES CXX)
+project(TrueRandomEncryption VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Platform detection
 if(WIN32)
@@ -81,7 +82,7 @@ else()
 endif()
 
 # Find Qt6
-find_package(Qt6 COMPONENTS Core Gui Widgets Svg REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Svg Quick Qml QuickControls2 Concurrent REQUIRED)
 
 # Core Library
 add_library(tre_core
@@ -107,10 +108,10 @@ set(CMAKE_AUTORCC OFF) # Disable global AUTORCC to avoid path issues with parent
 qt6_add_resources(TRE_RESOURCES src/gui/resources/resources.qrc)
 add_executable(tre-gui
     src/gui/main_gui.cpp
-    src/gui/MainWindow.cpp
+    src/gui/Backend.cpp
     ${TRE_RESOURCES}
 )
-target_link_libraries(tre-gui PRIVATE tre_core Qt6::Widgets Qt6::Svg)
+target_link_libraries(tre-gui PRIVATE tre_core Qt6::Widgets Qt6::Svg Qt6::Quick Qt6::Qml Qt6::QuickControls2 Qt6::Concurrent)
 
 # Windows-specific: Hide console window for GUI
 if(WIN32)

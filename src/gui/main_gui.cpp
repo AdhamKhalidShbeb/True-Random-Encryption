@@ -1,26 +1,40 @@
-#include "MainWindow.hpp"
-#include <QApplication>
-#include <QMessageBox>
+#include "Backend.hpp"
+#include <QGuiApplication>
+#include <QIcon>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQuickStyle>
+#include <iostream>
 #include <sodium.h>
 
 int main(int argc, char *argv[]) {
-  // Initialize libsodium before any crypto operations
   if (sodium_init() < 0) {
-    QApplication app(argc, argv);
-    QMessageBox::critical(nullptr, "Fatal Error",
-                          "Failed to initialize crypto library (libsodium).");
+    std::cerr << "Failed to init crypto\n";
     return 1;
   }
 
-  QApplication app(argc, argv);
+  qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
+  QQuickStyle::setStyle("Basic");
 
-  // Set application metadata
+  QGuiApplication app(argc, argv);
+  app.setWindowIcon(QIcon(":/icon.png"));
   app.setApplicationName("True Random Encryption");
-  app.setApplicationVersion("4.0");
+  app.setApplicationVersion("1.0");
   app.setOrganizationName("TRE Team");
 
-  MainWindow window;
-  window.show();
+  Backend backend;
+  QQmlApplicationEngine engine;
+  engine.rootContext()->setContextProperty("backend", &backend);
 
+  const QUrl url(QStringLiteral("qrc:/qml/Main.qml"));
+  QObject::connect(
+      &engine, &QQmlApplicationEngine::objectCreated, &app,
+      [url](QObject *obj, const QUrl &objUrl) {
+        if (!obj && url == objUrl)
+          QCoreApplication::exit(-1);
+      },
+      Qt::QueuedConnection);
+
+  engine.load(url);
   return app.exec();
 }

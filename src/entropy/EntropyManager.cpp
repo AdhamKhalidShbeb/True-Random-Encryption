@@ -5,18 +5,16 @@
 #include <iostream>
 
 EntropyManager::EntropyManager() {
-  // Register all known sources (offline-only, true randomness only)
-  // Priority order: CPU RDRAND (100) > Device HW RNG (90) > System RNG (50)
+  // Register sources in priority order: RDRAND > hwrng device > system RNG
   sources.push_back(std::make_unique<CpuRngSource>());
 
 #if defined(__linux__)
-  // /dev/hwrng is only available on Linux
   sources.push_back(std::make_unique<DeviceRngSource>());
 #endif
 
   sources.push_back(std::make_unique<RandomSource>());
 
-  // Sort by priority (descending)
+  // Sort by priority so we try the best sources first
   std::sort(sources.begin(), sources.end(),
             [](const std::unique_ptr<EntropySource> &a,
                const std::unique_ptr<EntropySource> &b) {
@@ -32,21 +30,13 @@ EntropyManager &EntropyManager::get_instance() {
 std::vector<unsigned char> EntropyManager::get_bytes(size_t num_bytes) {
   for (const auto &source : sources) {
     if (source->is_available()) {
-      // Try to get entropy
       std::vector<unsigned char> buffer = source->get_entropy(num_bytes);
-
-      if (!buffer.empty()) {
-        // Success!
-        // Only log if verbose (we don't have access to global VERBOSE here
-        // easily, but we can add a method or just keep it silent for now)
+      if (!buffer.empty())
         return buffer;
-      }
-      // If empty, source failed (e.g. hardware unavailable), try next one
     }
   }
 
-  // If all failed (should never happen due to /dev/random), return empty
-  std::cerr << "CRITICAL ERROR: All entropy sources failed!" << std::endl;
+  std::cerr << "All entropy sources failed\n";
   return {};
 }
 

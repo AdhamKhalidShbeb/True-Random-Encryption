@@ -70,6 +70,7 @@ private:
   QPushButton *browseFileButton_;
   QPushButton *browseFolderButton_;
   QPushButton *clearButton_;
+  QLabel *placeholderLabel_;
 
   // UI Elements - Password
   QLineEdit *passwordEdit_;

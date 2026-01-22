@@ -1,4 +1,4 @@
-# Build artifacts
+# Build
 build/
 CMakeCache.txt
 CMakeFiles/
@@ -8,28 +8,36 @@ cmake_install.cmake
 *.o
 *.so
 
-# Qt autogen
+# Qt
 *_autogen/
 .qt/
 moc_*.cpp
 ui_*.h
+qrc_*.cpp
 
-# Executables
+# Binaries
+bin/
 tre
 tre-gui
-bin/tre
-bin/tre-gui
+*.exe
 
-# Test files
-test*.txt
+# Test artifacts
 *.tre
+test*.txt
 
-# IDE
+# IDE / Editor
 .vscode/
-.clangd/
+.idea/
+.clangd
 .cache/
 compile_commands.json
+*.swp
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+build_log.txt

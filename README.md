@@ -1,123 +1,100 @@
 # True Random Encryption (TRE)
 
-> **Next-Generation File Encryption with Hardware True-Randomness**
+> A simple tool to encrypt your files using hardware-generated randomness.
 
-![Security Grade](https://img.shields.io/badge/Security-Defense%20Grade-blue) ![Encryption](https://img.shields.io/badge/Encryption-AES--256--GCM-green) ![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey)
-
----
-
-## Overview
-
-**True Random Encryption (TRE)** is a defense-grade encryption utility designed for mission-critical data protection. Unlike standard tools that rely on pseudo-random number generators (PRNGs), TRE leverages **hardware entropy sources** (CPU thermal noise, RDRAND) to generate cryptographically secure keys.
-
-Combined with **AES-256-GCM** authenticated encryption and **Argon2id** key derivation, TRE offers a security posture that exceeds industry standards.
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+![Encryption](https://img.shields.io/badge/Encryption-AES--256--GCM-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
 
-## Key Capabilities
+## What is this?
 
-### Defense-Grade Security Architecture
-- **Hardware Entropy:** Direct access to CPU thermal noise and RDRAND instructions.
-- **Authenticated Encryption:** AES-256-GCM ensures both confidentiality and integrity.
-- **Memory Hardening:** Argon2id KDF (64MB, 3 iterations) resists GPU/ASIC brute-force attacks.
-- **Anti-Forensics:** Secure memory wiping (`sodium_memzero`) and constant-time comparisons.
+TRE is a small utility I built to help protect files. Most encryption tools use software to generate "random" numbers, but TRE tries to be a bit more thorough by using your CPU's actual hardware (RDRAND) to get true physical randomness.
 
-### High-Performance Cryptographic Core
-- **Hardware Acceleration:** Fully optimized for AES-NI instruction sets.
-- **Smart Compression:** Integrated Zstandard (Zstd) with 4-tier adaptive compression.
-- **Zero-Copy Architecture:** Streaming encryption for handling gigabyte-scale files with constant RAM usage.
+It's not meant to be a massive enterprise suite—just a reliable, open-source tool for anyone who wants to keep their data private using modern standards.
 
-### Enterprise-Grade Interface
-- **Deep Tech GUI:** A modern, dark-mode interface designed for enterprise environments.
-- **Drag & Drop:** Seamless workflow for rapid file processing.
-- **Real-Time Feedback:** Visual strength indicators and progress monitoring.
+### Core Features
+- **Strong Encryption:** Uses AES-256-GCM to keep your files safe.
+- **Hardware Randomness:** Pulls entropy directly from your CPU.
+- **Secure Passwords:** Uses Argon2id to protect against brute-force attacks.
+- **Optional Compression:** Uses Zstandard to make files smaller before encrypting.
+- **Privacy First:** Wipes sensitive data from memory as soon as it's done.
 
 ---
 
 ## Quick Start
 
-### Installation
+### Building from Source
 
+If you're on **Linux (Ubuntu/Debian)**:
 ```bash
-# 1. Install Dependencies
-sudo ./scripts/install_dependencies.sh
+sudo apt install build-essential cmake qt6-base-dev qt6-declarative-dev libsodium-dev libzstd-dev
+```
 
-# 2. Build from Source
-mkdir -p build && cd build
+If you're on **macOS**:
+```bash
+brew install cmake qt@6 libsodium zstd
+```
+
+**To build:**
+```bash
+mkdir build && cd build
 cmake ..
-make
+make -j$(nproc)
+```
 
-# 3. Launch
-./tre-gui
+### Windows
+You'll need Visual Studio 2022 and Qt6. I've included a script to help:
+```batch
+scripts\build_windows.bat
 ```
 
 ---
 
-## Usage Guide
+## How to Use
 
-### Graphical Interface
-Launch the application to access the full suite of features in a visual environment:
+### Using the GUI
+The easiest way is to use the graphical interface. You can just drag and drop a file, type in a password, and you're good to go.
+
+- **Linux & macOS:** Download the latest version from [Releases](https://github.com/AdhamKhalidShbeb/True-Random-Encryption/releases), extract it, and run `tre-gui`.
+- **Windows:** Use the installer from the Releases page.
+
+### Using the CLI
+If you prefer the terminal, you can use the `tre` command:
+
 ```bash
-./tre-gui
+# To encrypt a file
+./tre encrypt my_file.pdf
+
+# To decrypt a file
+./tre decrypt my_file.tre
+
+# To use compression (makes the file smaller)
+./tre encrypt my_file.pdf --compress-ultra
 ```
 
-### Command Line Interface (CLI)
-
-**Encrypt a file:**
-```bash
-./tre encrypt classified_doc.pdf
-```
-
-**Encrypt with Ultra Compression:**
-```bash
-./tre encrypt database.sql --compress-ultra
-```
-
-**Decrypt:**
-```bash
-./tre decrypt classified_doc.tre
-```
+**Common Options:**
+- `-h, --help`: Show all commands
+- `-v, --version`: Show version info
+- `--verbose`: Show detailed progress
 
 ---
 
-## Technical Architecture
+## Security Details
 
-### Encryption Pipeline
-```mermaid
-graph LR
-    A[Password] -->|Argon2id| B(256-bit Key)
-    C[Hardware RNG] -->|Entropy| D(12-byte Nonce)
-    E[Plaintext] -->|Zstd| F(Compressed Data)
-    F -->|AES-256-GCM| G[Ciphertext + Tag]
-```
-
-### File Format Specification (V4)
-| Header | Metadata | Salt | Nonce | Payload | Flag |
-|--------|----------|------|-------|---------|------|
-| 1 Byte | Ext Len  | 128B | 12B   | AES-GCM | Comp |
+I've tried to follow best practices to keep things secure:
+1. **No Backdoors:** The code is open for anyone to read and audit.
+2. **Authenticated Encryption:** We use AEAD (AES-GCM) so the tool can tell if a file has been tampered with.
+3. **Memory Safety:** We use `sodium_memzero` to clear passwords from RAM immediately.
+4. **Hardened Passwords:** Argon2id is used with 64MB of RAM to make it very difficult for hackers to guess passwords using specialized hardware.
 
 ---
 
-## Security Assurance
+## Design Philosophy
 
-TRE is engineered with a **Security-First** philosophy:
-1.  **No Backdoors:** Open-source and auditable.
-2.  **No Weak Ciphers:** Only authenticated encryption (AEAD) is used.
-3.  **No Timing Leaks:** Constant-time validation for all sensitive operations.
-
----
-
-## Benchmarks
-
-| Operation | Speed | Efficiency |
-|-----------|-------|------------|
-| Encryption | ~1.2 GB/s | AES-NI Optimized |
-| Key Derivation | ~1.5s | Brute-Force Resistant |
-| Compression | 40-50% | Zstd Algorithm |
-
----
+This project is an exploration of applied cryptography. The goal isn't to invent new math, but to implement existing, trusted standards in a way that is fast, secure, and easy for anyone to use.
 
 ## License
 
-MIT License. Built for the Community.
-
+MIT License. Feel free to use it, study it, or improve it!

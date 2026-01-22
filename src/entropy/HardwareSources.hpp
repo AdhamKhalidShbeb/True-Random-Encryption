@@ -6,9 +6,8 @@
 #include <fstream>
 #include <iostream>
 
-// Cross-platform CPUID detection
+// CPUID detection for RDRAND support
 #if defined(_MSC_VER)
-// MSVC
 #include <intrin.h>
 #define TRE_CPUID(leaf, eax, ebx, ecx, edx)                                    \
   do {                                                                         \
@@ -26,7 +25,6 @@
     return (cpuInfo[2] & (1 << 30)) != 0;                                      \
   }())
 #else
-// GCC/Clang (Linux and macOS)
 #include <cpuid.h>
 #define TRE_CPUID(leaf, eax, ebx, ecx, edx)                                    \
   __get_cpuid(leaf, &eax, &ebx, &ecx, &edx)
@@ -40,17 +38,9 @@
   }())
 #endif
 
-// RDRAND intrinsics (cross-platform)
-#if defined(_MSC_VER)
 #include <immintrin.h>
-#else
-#include <immintrin.h>
-#endif
 
-//
-// CPU Hardware RNG (RDRAND)
-// Uses CPU thermal noise for true randomness
-//
+// Uses the RDRAND instruction to get entropy directly from CPU thermal noise
 class CpuRngSource final : public EntropySource {
 public:
   [[nodiscard]] std::string name() const noexcept override {
@@ -70,19 +60,16 @@ public:
       unsigned long long val = 0;
       bool success = false;
 
-      // Retry up to 10 times on failure
       for (int retries = 0; retries < 10 && !success; ++retries) {
-        if (_rdrand64_step(&val)) {
+        if (_rdrand64_step(&val))
           success = true;
-        }
       }
 
       if (!success) {
-        std::cerr << "Warning: RDRAND failed after retries\n";
+        std::cerr << "RDRAND failed\n";
         return {};
       }
 
-      // Copy 8 bytes at a time (or remaining bytes needed)
       const auto *bytes_ptr = reinterpret_cast<const unsigned char *>(&val);
       const size_t to_copy = std::min(size_t{8}, bytes - result.size());
       result.insert(result.end(), bytes_ptr, bytes_ptr + to_copy);
@@ -94,10 +81,7 @@ public:
   [[nodiscard]] int priority() const noexcept override { return 100; }
 };
 
-//
-// Device Hardware RNG (/dev/hwrng)
-// Only available on Linux systems with hardware RNG devices
-//
+// Linux-only: reads from /dev/hwrng if available
 #if defined(__linux__)
 class DeviceRngSource final : public EntropySource {
 public:
@@ -115,21 +99,19 @@ public:
     std::vector<unsigned char> result(bytes);
     std::ifstream f("/dev/hwrng", std::ios::binary);
 
-    if (!f) {
+    if (!f)
       return {};
-    }
 
     f.read(reinterpret_cast<char *>(result.data()),
            static_cast<std::streamsize>(bytes));
-    if (f.gcount() != static_cast<std::streamsize>(bytes)) {
+    if (f.gcount() != static_cast<std::streamsize>(bytes))
       return {};
-    }
 
     return result;
   }
 
   [[nodiscard]] int priority() const noexcept override { return 90; }
 };
-#endif // __linux__
+#endif
 
-#endif // HARDWARE_SOURCES_HPP
+#endif

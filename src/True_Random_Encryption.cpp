@@ -1,6 +1,4 @@
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sodium.h>
@@ -8,7 +6,6 @@
 #include <string_view>
 #include <vector>
 
-// Platform-specific includes for terminal handling
 #if defined(_WIN32) || defined(_WIN64)
 #define TRE_CLI_WINDOWS 1
 #ifndef WIN32_LEAN_AND_MEAN
@@ -17,7 +14,6 @@
 #include <conio.h>
 #include <windows.h>
 #else
-// POSIX (Linux and macOS)
 #include <termios.h>
 #include <unistd.h>
 #endif
@@ -28,32 +24,25 @@
 
 using namespace TRE;
 
-// Cross-platform sleep function
 inline void secure_delay(unsigned int seconds) {
 #ifdef TRE_CLI_WINDOWS
-  Sleep(seconds * 1000); // Windows Sleep takes milliseconds
+  Sleep(seconds * 1000);
 #else
   sleep(seconds);
 #endif
 }
 
-// Global configuration
 namespace {
 bool g_verbose = false;
 CompressionLevel g_compression_level = CompressionLevel::NONE;
 
 inline void vlog(std::string_view msg) {
-  if (g_verbose) {
+  if (g_verbose)
     std::cout << "[DEBUG] " << msg << '\n';
-  }
 }
 } // namespace
 
-//
-// INPUT/OUTPUT UTILITIES
-//
-
-// RAII guard to ensure terminal echo is restored even on exceptions
+// Hides password input by disabling terminal echo
 class TerminalEchoGuard {
 public:
   TerminalEchoGuard() {
@@ -62,18 +51,16 @@ public:
     if (hStdin_ != INVALID_HANDLE_VALUE) {
       if (GetConsoleMode(hStdin_, &oldMode_)) {
         DWORD newMode = oldMode_ & ~ENABLE_ECHO_INPUT;
-        if (SetConsoleMode(hStdin_, newMode)) {
+        if (SetConsoleMode(hStdin_, newMode))
           active_ = true;
-        }
       }
     }
 #else
     if (tcgetattr(STDIN_FILENO, &old_term_) == 0) {
       struct termios new_term = old_term_;
       new_term.c_lflag &= ~static_cast<tcflag_t>(ECHO);
-      if (tcsetattr(STDIN_FILENO, TCSANOW, &new_term) == 0) {
+      if (tcsetattr(STDIN_FILENO, TCSANOW, &new_term) == 0)
         active_ = true;
-      }
     }
 #endif
   }
@@ -88,11 +75,8 @@ public:
     }
   }
 
-  // Non-copyable, non-movable
   TerminalEchoGuard(const TerminalEchoGuard &) = delete;
   TerminalEchoGuard &operator=(const TerminalEchoGuard &) = delete;
-  TerminalEchoGuard(TerminalEchoGuard &&) = delete;
-  TerminalEchoGuard &operator=(TerminalEchoGuard &&) = delete;
 
 private:
 #ifdef TRE_CLI_WINDOWS
@@ -114,11 +98,11 @@ private:
 
 void show_password_requirements() {
   std::cout << "\nPassword requirements:\n"
-            << "  • Minimum length: " << MIN_PASSWORD_LENGTH << " characters\n"
-            << "  • At least " << MIN_UPPERCASE << " uppercase letters\n"
-            << "  • At least " << MIN_LOWERCASE << " lowercase letters\n"
-            << "  • At least " << MIN_DIGITS << " digits\n"
-            << "  • At least " << MIN_SYMBOLS << " symbols\n\n";
+            << "  - " << MIN_PASSWORD_LENGTH << "+ characters\n"
+            << "  - " << MIN_UPPERCASE << "+ uppercase\n"
+            << "  - " << MIN_LOWERCASE << "+ lowercase\n"
+            << "  - " << MIN_DIGITS << "+ digits\n"
+            << "  - " << MIN_SYMBOLS << "+ symbols\n\n";
 }
 
 [[nodiscard]] SecurePassword get_valid_password_for_encryption() {
@@ -130,24 +114,21 @@ void show_password_requirements() {
     std::string temp_password = get_password_hidden();
 
     if (temp_password.empty()) {
-      if (std::cin.eof()) {
-        std::cerr << "\n[ERROR] EOF reading password\n";
+      if (std::cin.eof())
         std::exit(1);
-      }
-      std::cerr << "\n[ERROR] Password cannot be empty!\n";
+      std::cerr << "Password cannot be empty.\n";
       continue;
     }
 
-    // Rate limiting delay
     secure_delay(4);
 
     std::string error_msg;
     if (!validate_password(temp_password, error_msg)) {
-      std::cerr << "\n[ERROR] " << error_msg << "\nPlease try again.\n\n";
+      std::cerr << error_msg << "\n\n";
       continue;
     }
 
-    vlog("Password meets all requirements!");
+    vlog("Password OK");
     password.set(temp_password.c_str(), temp_password.length());
     secure_wipe_string(temp_password);
     return password;
@@ -157,8 +138,6 @@ void show_password_requirements() {
 [[nodiscard]] SecurePassword get_password_for_decryption() {
   std::cout << "Enter password: ";
   std::string temp_password = get_password_hidden();
-
-  // Rate limiting delay
   secure_delay(4);
 
   SecurePassword password;
@@ -166,87 +145,63 @@ void show_password_requirements() {
   secure_wipe_string(temp_password);
 
   if (password.empty()) {
-    std::cerr << "Password cannot be empty!\n";
+    std::cerr << "Password cannot be empty.\n";
     std::exit(1);
   }
 
   return password;
 }
 
-//
-// SELF-TEST ON STARTUP
-//
-
+// Quick sanity checks on startup
 [[nodiscard]] bool self_test() {
   vlog("Running self-test...");
 
-  // Test 1: Argon2id KDF
-  {
-    std::vector<unsigned char> salt(SALT_SIZE, 0xAA);
-    auto key = derive_key("test", 4, salt);
-    if (key.size() != KEY_SIZE) {
-      std::cerr << "Self-test FAILED: Argon2id\n";
-      return false;
-    }
-    vlog("✓ Argon2id test passed");
-  }
-
-  // Test 2: AES-256-GCM encryption round-trip
-  {
-    std::vector<unsigned char> original = {0x48, 0x65, 0x6C, 0x6C, 0x6F};
-    std::vector<unsigned char> key(KEY_SIZE, 0xCC);
-    std::vector<unsigned char> nonce(NONCE_SIZE, 0xEE);
-
-    auto ciphertext = encrypt_aes256gcm(original, key, nonce);
-    auto decrypted = decrypt_aes256gcm(ciphertext, key, nonce);
-
-    if (decrypted != original) {
-      std::cerr << "Self-test FAILED: AES-256-GCM round-trip\n";
-      return false;
-    }
-    vlog("✓ AES-256-GCM encryption test passed");
-  }
-
-  // Test 3: Compression round-trip
-  if (!compression_self_test(g_verbose)) {
-    std::cerr << "Self-test FAILED: Compression\n";
+  // KDF test
+  std::vector<unsigned char> salt(SALT_SIZE, 0xAA);
+  auto key = derive_key("test", 4, salt);
+  if (key.size() != KEY_SIZE)
     return false;
-  }
+  vlog("KDF OK");
 
-  vlog("All self-tests passed!");
+  // Encryption round-trip
+  std::vector<unsigned char> original = {0x48, 0x65, 0x6C, 0x6C, 0x6F};
+  std::vector<unsigned char> test_key(KEY_SIZE, 0xCC);
+  std::vector<unsigned char> nonce(NONCE_SIZE, 0xEE);
+
+  auto ciphertext = encrypt_aes256gcm(original, test_key, nonce);
+  auto decrypted = decrypt_aes256gcm(ciphertext, test_key, nonce);
+  if (decrypted != original)
+    return false;
+  vlog("Encryption OK");
+
+  // Compression
+  if (!compression_self_test(g_verbose))
+    return false;
+  vlog("Compression OK");
+
   return true;
 }
-
-//
-// ENCRYPTION/DECRYPTION OPERATIONS
-//
 
 void perform_encryption(const std::string &input_file,
                         const std::string &output_file,
                         const SecurePassword &password) {
-  // Check if input file exists
   std::ifstream test_file(input_file);
   if (!test_file) {
-    std::cerr << "Error: File not found: " << input_file << '\n';
+    std::cerr << "File not found: " << input_file << '\n';
     std::exit(1);
   }
   test_file.close();
 
-  const size_t file_size = get_file_size(input_file);
-  vlog("File size: " + std::to_string(file_size) + " bytes");
+  vlog("File size: " + std::to_string(get_file_size(input_file)) + " bytes");
 
   std::ifstream infile(input_file, std::ios::binary);
-  if (!infile) {
-    std::cerr << "Cannot open input file: " << input_file << '\n';
+  if (!infile)
     std::exit(1);
-  }
 
-  vlog("Generating hardware random salt...");
+  vlog("Generating salt...");
   auto salt = EntropyManager::get_instance().get_bytes(SALT_SIZE);
-  if (salt.size() != SALT_SIZE) {
-    std::cerr << "Error: Failed to generate salt\n";
+  if (salt.size() != SALT_SIZE)
     std::exit(1);
-  }
 
   vlog("Deriving key...");
   auto key = derive_key(password.c_str(), password.size(), salt);
@@ -257,7 +212,7 @@ void perform_encryption(const std::string &input_file,
   infile.close();
 
   if (g_compression_level != CompressionLevel::NONE) {
-    vlog("Compressing data...");
+    vlog("Compressing...");
     plaintext = compress_data(plaintext, g_compression_level);
   }
 
@@ -267,13 +222,10 @@ void perform_encryption(const std::string &input_file,
   secure_wipe_vector(key);
 
   std::ofstream outfile(output_file, std::ios::binary);
-  if (!outfile) {
-    std::cerr << "Error: Cannot open output file: " << output_file << '\n';
+  if (!outfile)
     std::exit(1);
-  }
 
-  // Write header:
-  // [Version:1][Salt:128][Nonce:12][ExtLen:1][Ext:Var][Comp:1][Ciphertext:Var]
+  // Header: [Version][Salt][Nonce][ExtLen][Ext][Comp][Ciphertext]
   outfile.write(reinterpret_cast<const char *>(&FILE_FORMAT_VERSION), 1);
   outfile.write(reinterpret_cast<const char *>(salt.data()), SALT_SIZE);
   outfile.write(reinterpret_cast<const char *>(nonce.data()), NONCE_SIZE);
@@ -281,9 +233,8 @@ void perform_encryption(const std::string &input_file,
   const std::string ext = extract_extension(input_file);
   const auto ext_len = static_cast<unsigned char>(ext.length());
   outfile.write(reinterpret_cast<const char *>(&ext_len), 1);
-  if (ext_len > 0) {
+  if (ext_len > 0)
     outfile.write(ext.c_str(), ext_len);
-  }
 
   const auto comp_byte = static_cast<unsigned char>(g_compression_level);
   outfile.write(reinterpret_cast<const char *>(&comp_byte), 1);
@@ -291,22 +242,20 @@ void perform_encryption(const std::string &input_file,
                 static_cast<std::streamsize>(ciphertext.size()));
   outfile.close();
 
-  vlog("Encryption successful!");
+  vlog("Done");
 }
 
 void perform_decryption(const std::string &input_file,
                         const std::string &output_file,
                         const SecurePassword &password) {
   std::ifstream infile(input_file, std::ios::binary);
-  if (!infile) {
-    std::cerr << "Error: Cannot open input file: " << input_file << '\n';
+  if (!infile)
     std::exit(1);
-  }
 
   unsigned char version = 0;
   infile.read(reinterpret_cast<char *>(&version), 1);
   if (version != FILE_FORMAT_VERSION) {
-    std::cerr << "Error: Unsupported file version or not a TRE file.\n";
+    std::cerr << "Unsupported file format.\n";
     std::exit(1);
   }
 
@@ -318,9 +267,8 @@ void perform_decryption(const std::string &input_file,
 
   unsigned char ext_len = 0;
   infile.read(reinterpret_cast<char *>(&ext_len), 1);
-  if (ext_len > 0) {
+  if (ext_len > 0)
     infile.ignore(ext_len);
-  }
 
   unsigned char comp_byte = 0;
   infile.read(reinterpret_cast<char *>(&comp_byte), 1);
@@ -337,50 +285,52 @@ void perform_decryption(const std::string &input_file,
   vlog("Decrypting...");
   auto plaintext = decrypt_aes256gcm(ciphertext, key, nonce);
   if (plaintext.empty()) {
-    std::cerr
-        << "Error: Decryption failed (wrong password or corrupted file).\n";
+    std::cerr << "Decryption failed.\n";
     std::exit(1);
   }
 
   if (comp_level != CompressionLevel::NONE) {
     vlog("Decompressing...");
     plaintext = decompress_data(plaintext);
-    if (plaintext.empty()) {
-      std::cerr << "Error: Decompression failed.\n";
+    if (plaintext.empty())
       std::exit(1);
-    }
   }
 
   std::ofstream outfile(output_file, std::ios::binary);
-  if (!outfile) {
-    std::cerr << "Error: Cannot open output file: " << output_file << '\n';
+  if (!outfile)
     std::exit(1);
-  }
   outfile.write(reinterpret_cast<const char *>(plaintext.data()),
                 static_cast<std::streamsize>(plaintext.size()));
   outfile.close();
 
   secure_wipe_vector(plaintext);
   secure_wipe_vector(key);
-  vlog("Decryption successful!");
+  vlog("Done");
 }
 
-//
-// MAIN
-//
-
 void print_usage(const char *prog_name) {
-  std::cout << "True Random Encryption (TRE) v4.0\n"
+  std::cout << "True Random Encryption (TRE) v1.0\n"
             << "Usage: " << prog_name << " <command> [options] <file>\n\n"
             << "Commands:\n"
             << "  encrypt <file>   Encrypt a file\n"
-            << "  decrypt <file>   Decrypt a file\n\n"
+            << "  decrypt <file>   Decrypt a .tre file\n\n"
             << "Options:\n"
-            << "  -v, --verbose    Enable verbose logging\n"
-            << "  --compress       Enable compression (encrypt only)\n"
-            << "  --compress-fast  Fast compression\n"
-            << "  --compress-max   Max compression\n"
-            << "  --compress-ultra Ultra compression\n\n";
+            << "  -h, --help       Show this help message\n"
+            << "  -v, --version    Show version information\n"
+            << "  --verbose        Enable verbose output\n"
+            << "  --compress       Balanced compression (default)\n"
+            << "  --compress-fast  Faster compression\n"
+            << "  --compress-max   Better compression\n"
+            << "  --compress-ultra Maximum compression\n\n"
+            << "Examples:\n"
+            << "  " << prog_name << " encrypt secret.pdf\n"
+            << "  " << prog_name << " decrypt secret.pdf.tre\n";
+}
+
+void print_version() {
+  std::cout << "True Random Encryption (TRE) v1.0\n"
+            << "Copyright (c) 2025 Adham Khalid Shbeb\n"
+            << "License: MIT\n";
 }
 
 int main(int argc, char *argv[]) {
@@ -389,12 +339,25 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (argc < 3) {
+  if (argc < 2) {
     print_usage(argv[0]);
     return 1;
   }
 
   const std::string_view command = argv[1];
+
+  if (command == "help" || command == "--help" || command == "-h") {
+    print_usage(argv[0]);
+    return 0;
+  }
+
+  if (command == "version" || command == "--version" || command == "-v") {
+    // Note: -v is ambiguous (verbose vs version), but as a command it means
+    // version
+    print_version();
+    return 0;
+  }
+
   std::string input_file;
 
   // Parse arguments
@@ -415,35 +378,40 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (input_file.empty()) {
-    std::cerr << "Error: No input file specified\n";
-    return 1;
-  }
-
-  if (!self_test()) {
-    std::cerr << "Self-test failed! Aborting.\n";
-    return 1;
-  }
-
   if (command == "encrypt") {
-    if (!is_safe_path(input_file)) {
-      std::cerr << "Error: Unsafe input path detected\n";
+    if (input_file.empty()) {
+      std::cerr << "Error: No input file specified.\n";
       return 1;
     }
-    const auto output_file =
-        auto_generate_output_filename(input_file, "encrypt");
+    if (!self_test()) {
+      std::cerr << "Self-test failed! Aborting.\n";
+      return 1;
+    }
+    if (!is_safe_path(input_file)) {
+      std::cerr << "Error: Unsafe input path detected.\n";
+      return 1;
+    }
+    auto output_file = auto_generate_output_filename(input_file, "encrypt");
     auto password = get_valid_password_for_encryption();
     perform_encryption(input_file, output_file, password);
   } else if (command == "decrypt") {
-    if (!is_safe_path(input_file)) {
-      std::cerr << "Error: Unsafe input path detected\n";
+    if (input_file.empty()) {
+      std::cerr << "Error: No input file specified.\n";
       return 1;
     }
-    const auto output_file =
-        auto_generate_output_filename(input_file, "decrypt");
+    if (!self_test()) {
+      std::cerr << "Self-test failed! Aborting.\n";
+      return 1;
+    }
+    if (!is_safe_path(input_file)) {
+      std::cerr << "Error: Unsafe input path detected.\n";
+      return 1;
+    }
+    auto output_file = auto_generate_output_filename(input_file, "decrypt");
     auto password = get_password_for_decryption();
     perform_decryption(input_file, output_file, password);
   } else {
+    std::cerr << "Unknown command: " << command << "\n\n";
     print_usage(argv[0]);
     return 1;
   }

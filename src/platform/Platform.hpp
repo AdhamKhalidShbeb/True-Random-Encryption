@@ -1,9 +1,6 @@
 #ifndef PLATFORM_HPP
 #define PLATFORM_HPP
 
-//
-// Platform Detection
-//
 #if defined(_WIN32) || defined(_WIN64)
 #define TRE_WINDOWS 1
 #define TRE_PLATFORM_NAME "Windows"
@@ -17,9 +14,6 @@
 #error "Unsupported platform"
 #endif
 
-//
-// Platform-Specific Includes
-//
 #ifdef TRE_WINDOWS
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -31,7 +25,6 @@
 #include <windows.h>
 #pragma comment(lib, "bcrypt.lib")
 #else
-// POSIX (Linux and macOS)
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -44,11 +37,7 @@
 namespace TRE {
 namespace Platform {
 
-//
-// Secure Memory Locking
-// Prevents sensitive data (passwords, keys) from being swapped to disk
-//
-
+// Lock memory so it won't get swapped to disk
 inline bool lock_memory(void *addr, size_t len) {
 #ifdef TRE_WINDOWS
   return VirtualLock(addr, len) != 0;
@@ -65,10 +54,7 @@ inline void unlock_memory(void *addr, size_t len) {
 #endif
 }
 
-//
-// Secure File Operations for secure_delete_file
-//
-
+// File operations
 inline int open_file_rw(const char *path) {
 #ifdef TRE_WINDOWS
   return _open(path, _O_RDWR | _O_BINARY);
@@ -123,19 +109,13 @@ inline void sync_file(int fd) {
 #endif
 }
 
-//
-// System Entropy (True Random)
-// Uses hardware-backed random sources on each platform
-//
-
+// Get random bytes from the OS
 inline bool get_system_random(unsigned char *buffer, size_t size) {
 #ifdef TRE_WINDOWS
-  // BCryptGenRandom uses TPM, RDRAND, and system entropy pool
   NTSTATUS status = BCryptGenRandom(NULL, buffer, static_cast<ULONG>(size),
                                     BCRYPT_USE_SYSTEM_PREFERRED_RNG);
-  return status == 0; // STATUS_SUCCESS
+  return status == 0;
 #else
-  // Linux/macOS: /dev/random provides true hardware randomness
   int fd = open("/dev/random", O_RDONLY);
   if (fd < 0)
     return false;
@@ -157,4 +137,4 @@ inline bool get_system_random(unsigned char *buffer, size_t size) {
 } // namespace Platform
 } // namespace TRE
 
-#endif // PLATFORM_HPP
+#endif

@@ -11,7 +11,7 @@ namespace TRE {
 
 namespace fs = std::filesystem;
 
-// Constants - constexpr for compile-time evaluation
+// Crypto constants
 inline constexpr int KEY_SIZE = 32;
 inline constexpr int SALT_SIZE = 128;
 inline constexpr int NONCE_SIZE = 12;
@@ -20,15 +20,15 @@ inline constexpr int MIN_UPPERCASE = 2;
 inline constexpr int MIN_LOWERCASE = 2;
 inline constexpr int MIN_DIGITS = 2;
 inline constexpr int MIN_SYMBOLS = 2;
-inline constexpr unsigned char FILE_FORMAT_VERSION = 0x03;
+inline constexpr unsigned char FILE_FORMAT_VERSION = 0x01;
 
-// Secure Memory Utilities
+// Memory
 void secure_wipe_string(std::string &s) noexcept;
 void secure_wipe_vector(std::vector<unsigned char> &v) noexcept;
 [[nodiscard]] bool secure_delete_file(const std::string &filename);
 [[nodiscard]] bool is_safe_path(const std::string &path);
 
-// Secure Password Class - RAII for password memory
+// Holds password in locked memory so it won't get swapped to disk
 class SecurePassword {
 private:
   char *data_ = nullptr;
@@ -39,11 +39,9 @@ public:
   explicit SecurePassword(size_t max_len = 256);
   ~SecurePassword();
 
-  // Non-copyable
   SecurePassword(const SecurePassword &) = delete;
   SecurePassword &operator=(const SecurePassword &) = delete;
 
-  // Movable
   SecurePassword(SecurePassword &&other) noexcept;
   SecurePassword &operator=(SecurePassword &&other) noexcept;
 
@@ -53,7 +51,7 @@ public:
   [[nodiscard]] bool empty() const noexcept { return length_ == 0; }
 };
 
-// Cryptographic Functions
+// Crypto operations
 [[nodiscard]] std::vector<unsigned char>
 derive_key(const char *password, size_t password_len,
            const std::vector<unsigned char> &salt);
@@ -68,11 +66,10 @@ decrypt_aes256gcm(const std::vector<unsigned char> &ciphertext,
                   const std::vector<unsigned char> &key,
                   const std::vector<unsigned char> &nonce);
 
-// Validation
 [[nodiscard]] bool validate_password(std::string_view password,
                                      std::string &error_msg);
 
-// File Utilities
+// File helpers
 [[nodiscard]] std::string extract_extension(std::string_view filename);
 [[nodiscard]] size_t get_file_size(const std::string &filename);
 [[nodiscard]] std::string auto_generate_output_filename(std::string_view input,
@@ -80,4 +77,4 @@ decrypt_aes256gcm(const std::vector<unsigned char> &ciphertext,
 
 } // namespace TRE
 
-#endif // CRYPTO_CORE_HPP
+#endif

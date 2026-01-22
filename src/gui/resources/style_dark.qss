@@ -1,5 +1,5 @@
 /* ============================================
-   True Random Encryption - Dark Mode: The Stealth Fortress
+   True Random Encryption - Dark Mode: Zero-Alignment Hardened v2
    ============================================ */
 
 /* === GLOBAL STYLES === */
@@ -14,90 +14,90 @@ QWidget {
     color: #E0E0E0;
 }
 
-/* === TITLE === */
+/* === HEADER === */
 QLabel#titleLabel {
-    font-size: 22px;
-    font-weight: 800;
+    font-size: 20pt; /* v2: 20pt */
+    font-weight: 600;
     color: #FFB000; /* Safety Amber */
-    padding: 8px;
+    padding: 0px;
     background: transparent;
     letter-spacing: 1px;
     text-transform: uppercase;
 }
 
 QLabel#subtitleLabel {
-    font-size: 12px;
-    color: #888888;
-    margin-bottom: 10px;
-    font-weight: 400;
-    letter-spacing: 0.5px;
-}
-
-/* === GROUP BOXES === */
-QGroupBox {
-    background-color: #1E2329; /* Armor Grey */
-    border: 1px solid #2D343C;
-    border-radius: 4px;
-    margin-top: 15px;
-    padding: 8px;
-    padding-top: 20px;
-}
-
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 3px 10px;
-    background-color: #1E2329;
-    border: 1px solid #2D343C;
-    border-radius: 2px;
-    color: #FFB000; /* Safety Amber */
-    font-weight: 700;
-    left: 12px;
+    font-family: "JetBrains Mono", monospace;
     font-size: 10px;
-    text-transform: uppercase;
+    color: #7A828E; /* Brighter neutral slate */
+    font-weight: 400;
     letter-spacing: 1px;
 }
 
-/* === FILE LIST === */
-QFrame#listFrame {
-    background-color: #0F1115;
-    border: 1px solid #2D343C;
+/* === SECTION HEADERS === */
+QLabel#sectionHeader {
+    font-family: "JetBrains Mono", monospace; /* v2: Monospace */
+    font-size: 9pt;
+    font-weight: bold;
+    color: #6A7282;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+/* === SECTIONS (FLATTENED) === */
+QWidget#inputSection, QWidget#passwordSection, QWidget#optionsSection {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+}
+
+/* === DROP ZONE === */
+QFrame#dropZoneFrame {
+    background-color: #090A0C; /* One shade darker */
+    border: 1px dashed #2D343D;
     border-radius: 4px;
 }
 
-QListWidget#fileList {
-    background-color: transparent;
-    border: none;
-    color: #E0E0E0;
+QLabel#fileTypeLabel {
+    color: #FFB000; /* Safety Amber */
+    font-weight: 500;
+    font-size: 10pt;
+    letter-spacing: 0.5px;
+}
+
+/* === FILE LIST === */
+QListWidget#fileList, QLabel#placeholderLabel {
+    background-color: #0A0C0F;
+    border: 1px solid #2D343D;
+    border-radius: 4px;
+    color: #6A7282; /* Muted text */
     outline: none;
-    min-height: 120px;
 }
 
 QListWidget#fileList::item {
-    padding: 8px 12px;
+    padding: 6px 12px;
     border-radius: 4px;
     margin: 1px;
-    border: none;
-    background-color: transparent;
 }
 
 QListWidget#fileList::item:hover {
-    background-color: rgba(255, 176, 0, 0.1);
+    background-color: rgba(255, 176, 0, 0.05);
 }
 
 QListWidget#fileList::item:selected {
-    background-color: rgba(255, 176, 0, 0.2);
+    background-color: rgba(255, 176, 0, 0.1);
     color: #FFFFFF;
 }
 
 /* === LINE EDIT === */
 QLineEdit {
-    background-color: #0F1115;
-    border: 1px solid #2D343C;
-    border-radius: 4px;
-    padding: 8px 12px;
-    color: #FFFFFF;
-    font-size: 12px;
+    background-color: #0A0C0F;
+    border: 1px solid #2D343D;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    padding-left: 12px; /* Premium breathing room */
+    color: #E6E8EB;
+    font-size: 11pt;
     selection-background-color: #FFB000;
     selection-color: #000000;
 }
@@ -106,12 +106,31 @@ QLineEdit:focus {
     border: 1px solid #FFB000;
 }
 
+/* === PROGRESS BARS (STRENGTH BAR) === */
+QProgressBar#strengthBar {
+    border: none;
+    background-color: #1E2329;
+    height: 2px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+QProgressBar#strengthBar::chunk {
+    background-color: #FFB000;
+}
+
+QLabel#strengthLabel {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    color: #666666;
+}
+
 /* === BUTTONS === */
 QPushButton {
     background-color: #1E2329;
-    border: 1px solid #2D343C;
+    border: 1px solid #2D343D;
     border-radius: 4px;
-    padding: 4px 12px;
+    padding: 6px 12px;
     color: #E0E0E0;
     font-weight: 500;
     font-size: 11px;
@@ -119,20 +138,24 @@ QPushButton {
 }
 
 QPushButton:hover {
-    background-color: #2D343C;
-    border: 1px solid #FFB000;
+    background-color: #2D343D;
     color: #FFFFFF;
 }
 
-QPushButton:pressed {
-    background-color: #0F1115;
+/* Icon Buttons (Integrated) */
+QPushButton#browseFileButton, QPushButton#browseFolderButton, QPushButton#clearButton {
+    background-color: transparent;
+    border: none;
+}
+
+QPushButton#browseFileButton:hover, QPushButton#browseFolderButton:hover, QPushButton#clearButton:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 /* Primary Action Buttons */
 QPushButton#encryptButton, QPushButton#decryptButton {
-    font-size: 14px;
-    font-weight: 800;
-    padding: 12px;
+    font-size: 12pt;
+    font-weight: bold;
     border-radius: 4px;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -140,8 +163,8 @@ QPushButton#encryptButton, QPushButton#decryptButton {
 
 QPushButton#encryptButton {
     background-color: #FFB000; /* Safety Amber */
-    border: 1px solid #FFB000;
-    color: #000000;
+    border: none;
+    color: #0F1115;
 }
 
 QPushButton#encryptButton:hover {
@@ -150,7 +173,7 @@ QPushButton#encryptButton:hover {
 
 QPushButton#decryptButton {
     background-color: transparent;
-    border: 1px solid #FFB000;
+    border: 1.5px solid #FFB000; /* v2: 1.5px Ghost Style */
     color: #FFB000;
 }
 
@@ -158,24 +181,20 @@ QPushButton#decryptButton:hover {
     background-color: rgba(255, 176, 0, 0.1);
 }
 
-/* Toggle Password Button */
-QPushButton#togglePasswordButton {
+/* Theme Toggle Button */
+QPushButton#themeToggleButton {
     background-color: transparent;
     border: none;
-    padding: 0px;
-}
-
-QPushButton#togglePasswordButton:hover {
-    background-color: rgba(255, 176, 0, 0.1);
+    font-size: 16px;
 }
 
 /* === COMBO BOX === */
 QComboBox {
-    background-color: #0F1115;
-    border: 1px solid #2D343C;
+    background-color: #0A0C0F;
+    border: 1px solid #2D343D;
     border-radius: 4px;
-    padding: 4px 10px;
-    color: #FFFFFF;
+    padding-left: 12px;
+    color: #E6E8EB;
 }
 
 QComboBox:hover {
@@ -186,37 +205,37 @@ QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
     width: 24px;
-    border-left: 1px solid #2D343C;
+    border-left: 1px solid #2D343D;
     background: transparent;
 }
 
 QComboBox::down-arrow {
     image: url(:/combo_arrow.svg);
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
 }
 
 QComboBox QAbstractItemView {
-    background-color: #1E2329;
+    background-color: #0A0C0F;
     border: 1px solid #FFB000;
     selection-background-color: #FFB000;
     selection-color: #000000;
-    color: #FFFFFF;
+    color: #E6E8EB;
     outline: none;
 }
 
 /* === CHECKBOX === */
 QCheckBox {
-    spacing: 10px;
+    spacing: 8px;
     color: #E0E0E0;
 }
 
 QCheckBox::indicator {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 2px;
-    border: 1px solid #2D343C;
-    background-color: #0F1115;
+    border: 1px solid #2D343D;
+    background-color: #0A0C0F;
 }
 
 QCheckBox::indicator:hover {
@@ -226,65 +245,51 @@ QCheckBox::indicator:hover {
 QCheckBox::indicator:checked {
     background-color: #FFB000;
     border: 1px solid #FFB000;
-    image: url(:/check_mark.svg); /* Assuming we might add one, or use standard */
 }
 
-/* === PROGRESS BARS === */
-QProgressBar {
-    background-color: #0F1115;
-    border: 1px solid #2D343C;
+/* === PROGRESS BARS (MAIN) === */
+QProgressBar#mainProgressBar {
+    background-color: #0A0C0F;
+    border: 1px solid #2D343D;
     border-radius: 4px;
     text-align: center;
     color: #FFFFFF;
     font-weight: 700;
 }
 
-QProgressBar::chunk {
+QProgressBar#mainProgressBar::chunk {
     background-color: #FFB000;
     border-radius: 2px;
 }
 
-QProgressBar#strengthBar {
-    border: none;
-    background-color: #0F1115;
-    height: 6px;
-}
-
-/* === STATUS LABELS === */
+/* === STATUS STRIP === */
 QLabel#statusLabel {
-    font-size: 13px;
-    font-weight: 600;
-    color: #FFFFFF;
-    padding: 8px;
-    background-color: #1E2329;
-    border-radius: 4px;
-    border: 1px solid #2D343C;
+    font-family: "Inter", sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    color: #888888;
+    padding: 0px;
+    background-color: transparent;
+    border: none;
 }
 
 QLabel#detailLabel {
-    font-size: 11px;
-    color: #888888;
-}
-
-QLabel#fileTypeLabel {
-    color: rgba(255, 176, 0, 0.4);
-    font-weight: 800;
-    font-size: 14px;
-    letter-spacing: 1px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    color: #444444;
 }
 
 /* === SCROLLBAR === */
 QScrollBar:vertical {
     background: #0F1115;
-    width: 12px;
+    width: 8px;
     margin: 0px;
 }
 
 QScrollBar::handle:vertical {
-    background: #2D343C;
-    min-height: 25px;
+    background: #1E2329;
+    min-height: 20px;
     border-radius: 4px;
-    margin: 2px;
 }
 
 QScrollBar::handle:vertical:hover {
@@ -293,9 +298,9 @@ QScrollBar::handle:vertical:hover {
 
 /* === TOOLTIPS === */
 QToolTip {
-    background-color: #1E2329;
+    background-color: #0A0C0F;
     border: 1px solid #FFB000;
     color: #FFFFFF;
-    padding: 6px;
+    padding: 4px;
     border-radius: 4px;
 }

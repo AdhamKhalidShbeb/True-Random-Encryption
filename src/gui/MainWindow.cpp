@@ -26,184 +26,246 @@ MainWindow::~MainWindow() {}
 
 void MainWindow::setupUi() {
   setWindowTitle("True Random Encryption");
-  setMinimumSize(450, 650);
-  setMaximumHeight(650);
-  resize(500, 650);
+  setMinimumSize(520, 700);
+  resize(520, 700);
 
   // The content widget that holds the actual UI
   QWidget *contentWidget = new QWidget(this);
   setCentralWidget(contentWidget);
 
   QVBoxLayout *mainLayout = new QVBoxLayout(contentWidget);
-  mainLayout->setSpacing(10);
-  mainLayout->setContentsMargins(15, 15, 15, 15);
+  mainLayout->setSpacing(0); // Precision spacing with addSpacing
+  mainLayout->setContentsMargins(48, 40, 48, 40); // Vertical Pillar Margin
+  mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
   // ===== HEADER =====
   QHBoxLayout *headerLayout = new QHBoxLayout();
   headerLayout->setContentsMargins(0, 0, 0, 0);
 
-  QLabel *titleLabel = new QLabel("True Random Encryption", this);
+  QLabel *titleLabel = new QLabel("TRUE RANDOM ENCRYPTION", this);
   titleLabel->setObjectName("titleLabel");
-  titleLabel->setAlignment(Qt::AlignCenter);
+  titleLabel->setAlignment(Qt::AlignLeft);
+  headerLayout->addWidget(titleLabel);
 
-  themeToggleButton_ = new QPushButton(this);
+  headerLayout->addStretch();
+
+  themeToggleButton_ = new QPushButton("🌙", this);
   themeToggleButton_->setObjectName("themeToggleButton");
   themeToggleButton_->setFixedSize(32, 32);
-  themeToggleButton_->setToolTip("Toggle Dark/Light Mode");
-  themeToggleButton_->setCursor(Qt::PointingHandCursor);
-
-  headerLayout->addStretch(1);
-  headerLayout->addWidget(titleLabel);
-  headerLayout->addStretch(1);
   headerLayout->addWidget(themeToggleButton_);
 
   mainLayout->addLayout(headerLayout);
 
-  QLabel *subtitleLabel = new QLabel(
-      "Military-Grade File Encryption with Hardware True-Randomness", this);
+  mainLayout->addSpacing(0); // v2: Closer to title
+
+  QLabel *subtitleLabel = new QLabel("MILITARY-GRADE FILE ENCRYPTION", this);
   subtitleLabel->setObjectName("subtitleLabel");
-  subtitleLabel->setAlignment(Qt::AlignCenter);
+  subtitleLabel->setAlignment(Qt::AlignLeft);
   mainLayout->addWidget(subtitleLabel);
 
-  // ===== INPUT FILES GROUP =====
-  QGroupBox *inputGroup = new QGroupBox("Input Files", this);
-  inputGroup->setObjectName("inputGroup");
-  QVBoxLayout *inputLayout = new QVBoxLayout(inputGroup);
-  inputLayout->setContentsMargins(10, 15, 10, 10);
+  mainLayout->addSpacing(24); // Standardized spacing (v2)
+
+  // ===== INPUT FILES SECTION =====
+  QWidget *inputSection = new QWidget(this);
+  inputSection->setObjectName("inputSection");
+  QVBoxLayout *inputLayout = new QVBoxLayout(inputSection);
+  inputLayout->setContentsMargins(0, 0, 0, 0);
   inputLayout->setSpacing(8);
 
-  // Frame for the list to give it a distinct box look
-  QFrame *listFrame = new QFrame(inputGroup);
-  listFrame->setObjectName("listFrame");
-  QGridLayout *listFrameLayout = new QGridLayout(listFrame);
-  listFrameLayout->setContentsMargins(0, 0, 0, 0);
+  QLabel *inputHeader = new QLabel("INPUT FILES", inputSection);
+  inputHeader->setObjectName("sectionHeader");
+  inputHeader->setAlignment(Qt::AlignLeft);
+  inputLayout->addWidget(inputHeader);
 
-  fileListWidget_ = new QListWidget(listFrame);
-  fileListWidget_->setObjectName("fileList");
-  fileListWidget_->setMinimumHeight(120);
-  fileListWidget_->setSelectionMode(QAbstractItemView::ExtendedSelection);
-  fileListWidget_->setIconSize(QSize(32, 32));
+  // Drop Zone Frame (Visual only)
+  QFrame *dropZoneFrame = new QFrame(inputSection);
+  dropZoneFrame->setObjectName("dropZoneFrame");
+  dropZoneFrame->setMinimumHeight(120);
+  QVBoxLayout *dropZoneLayout = new QVBoxLayout(dropZoneFrame);
+  dropZoneLayout->setContentsMargins(0, 0, 0, 0);
 
-  fileTypeLabel_ = new QLabel("DROP FILES OR FOLDERS HERE", listFrame);
+  QLabel *cloudIcon = new QLabel(dropZoneFrame);
+  cloudIcon->setPixmap(QIcon(":/cloud_upload.svg").pixmap(48, 48));
+  cloudIcon->setAlignment(Qt::AlignCenter);
+  cloudIcon->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+  fileTypeLabel_ = new QLabel("Drop files or folders here", dropZoneFrame);
   fileTypeLabel_->setObjectName("fileTypeLabel");
   fileTypeLabel_->setAlignment(Qt::AlignCenter);
   fileTypeLabel_->setAttribute(Qt::WA_TransparentForMouseEvents);
-  fileTypeLabel_->setStyleSheet(
-      "color: rgba(0, 243, 255, 0.4); font-weight: 800; font-size: 14px; "
-      "letter-spacing: 1px;");
 
-  listFrameLayout->addWidget(fileListWidget_, 0, 0);
-  listFrameLayout->addWidget(fileTypeLabel_, 0, 0);
-  inputLayout->addWidget(listFrame, 1);
+  dropZoneLayout->addStretch(1);
+  dropZoneLayout->addWidget(cloudIcon);
+  dropZoneLayout->addSpacing(8);
+  dropZoneLayout->addWidget(fileTypeLabel_);
+  dropZoneLayout->addStretch(1);
 
-  QHBoxLayout *browseLayout = new QHBoxLayout();
-  browseLayout->setContentsMargins(0, 5, 0, 0); // Add some top margin
-  browseLayout->setSpacing(10);
-  browseFileButton_ = new QPushButton("FILES", inputGroup);
+  inputLayout->addWidget(dropZoneFrame);
+
+  // Button Row for File Actions
+  QHBoxLayout *fileActionLayout = new QHBoxLayout();
+  fileActionLayout->setContentsMargins(0, 8, 0, 8);
+  fileActionLayout->setSpacing(12);
+
+  browseFileButton_ = new QPushButton("Add Files", inputSection);
   browseFileButton_->setObjectName("browseFileButton");
-  browseFileButton_->setMinimumHeight(32);
-  browseFolderButton_ = new QPushButton("FOLDERS", inputGroup);
+  browseFileButton_->setFixedHeight(36);
+
+  browseFolderButton_ = new QPushButton("Add Folder", inputSection);
   browseFolderButton_->setObjectName("browseFolderButton");
-  browseFolderButton_->setMinimumHeight(32);
-  clearButton_ = new QPushButton("CLEAR", inputGroup);
+  browseFolderButton_->setFixedHeight(36);
+
+  clearButton_ = new QPushButton("Clear", inputSection);
   clearButton_->setObjectName("clearButton");
-  clearButton_->setMinimumHeight(32);
+  clearButton_->setFixedHeight(36);
 
-  browseLayout->addWidget(browseFileButton_, 1);
-  browseLayout->addWidget(browseFolderButton_, 1);
-  browseLayout->addWidget(clearButton_, 1);
-  inputLayout->addLayout(browseLayout);
-  mainLayout->addWidget(inputGroup, 1); // Give it stretch
+  fileActionLayout->addWidget(browseFileButton_);
+  fileActionLayout->addWidget(browseFolderButton_);
+  fileActionLayout->addStretch();
+  fileActionLayout->addWidget(clearButton_);
 
-  // ===== PASSWORD GROUP =====
-  QGroupBox *passwordGroup = new QGroupBox("Password", this);
-  passwordGroup->setObjectName("passwordGroup");
-  QVBoxLayout *passLayout = new QVBoxLayout(passwordGroup);
+  inputLayout->addLayout(fileActionLayout);
+
+  // File List Placeholder
+  placeholderLabel_ = new QLabel("No files selected", inputSection);
+  placeholderLabel_->setObjectName("placeholderLabel");
+  placeholderLabel_->setAlignment(Qt::AlignCenter);
+  placeholderLabel_->setFixedHeight(100);
+  inputLayout->addWidget(placeholderLabel_);
+
+  // File List (Below drop zone)
+  fileListWidget_ = new QListWidget(inputSection);
+  fileListWidget_->setObjectName("fileList");
+  fileListWidget_->setMinimumHeight(100);
+  fileListWidget_->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  fileListWidget_->setIconSize(QSize(24, 24));
+  inputLayout->addWidget(fileListWidget_);
+
+  mainLayout->addWidget(inputSection);
+  mainLayout->addSpacing(24); // Standardized spacing (v2)
+
+  // ===== PASSWORD SECTION =====
+  QWidget *passwordSection = new QWidget(this);
+  passwordSection->setObjectName("passwordSection");
+  QVBoxLayout *passLayout = new QVBoxLayout(passwordSection);
+  passLayout->setContentsMargins(0, 0, 0, 0);
+  passLayout->setSpacing(8);
+
+  QLabel *passwordHeader = new QLabel("PASSWORD", passwordSection);
+  passwordHeader->setObjectName("sectionHeader");
+  passwordHeader->setAlignment(Qt::AlignLeft);
+  passLayout->addWidget(passwordHeader);
+
+  // Integrated Input & Strength Bar
+  QWidget *passContainer = new QWidget(passwordSection);
+  passContainer->setObjectName("passContainer");
+  QVBoxLayout *passContainerLayout = new QVBoxLayout(passContainer);
+  passContainerLayout->setContentsMargins(0, 0, 0, 0);
+  passContainerLayout->setSpacing(0); // Kill the gap
 
   QHBoxLayout *passInputLayout = new QHBoxLayout();
-  passwordEdit_ = new QLineEdit(this);
+  passInputLayout->setContentsMargins(0, 0, 0, 0);
+  passwordEdit_ = new QLineEdit(passContainer);
   passwordEdit_->setEchoMode(QLineEdit::Password);
-  passwordEdit_->setPlaceholderText(
-      "Enter secure password (16+ chars, mixed case, digits, symbols)");
+  passwordEdit_->setPlaceholderText("Enter secure password...");
   passwordEdit_->setObjectName("passwordEdit");
+  passwordEdit_->setFixedHeight(42); // Standardized height
 
-  togglePasswordButton_ = new QPushButton(this);
+  togglePasswordButton_ = new QPushButton(passContainer);
   togglePasswordButton_->setObjectName("togglePasswordButton");
-  togglePasswordButton_->setFixedWidth(32);
-  togglePasswordButton_->setFixedHeight(32);
+  togglePasswordButton_->setFixedSize(32, 32);
   togglePasswordButton_->setCheckable(true);
   togglePasswordButton_->setIcon(QIcon(":/eye_closed.svg"));
   togglePasswordButton_->setIconSize(QSize(18, 18));
-  togglePasswordButton_->setToolTip("Show/Hide Password");
 
   passInputLayout->addWidget(passwordEdit_);
   passInputLayout->addWidget(togglePasswordButton_);
-  passLayout->addLayout(passInputLayout);
+  passContainerLayout->addLayout(passInputLayout);
 
-  // Password strength
-  QHBoxLayout *strengthLayout = new QHBoxLayout();
-  strengthBar_ = new QProgressBar(this);
+  strengthBar_ = new QProgressBar(passContainer);
   strengthBar_->setObjectName("strengthBar");
   strengthBar_->setRange(0, 100);
   strengthBar_->setValue(0);
   strengthBar_->setTextVisible(false);
-  strengthBar_->setFixedHeight(8);
+  strengthBar_->setFixedHeight(2); // Integrated line
+  passContainerLayout->addWidget(strengthBar_);
 
-  strengthLabel_ = new QLabel("Enter password", this);
+  passLayout->addWidget(passContainer);
+
+  strengthLabel_ = new QLabel("Enter password", passwordSection);
   strengthLabel_->setObjectName("strengthLabel");
+  strengthLabel_->setAlignment(Qt::AlignLeft);
+  passLayout->addWidget(strengthLabel_);
 
-  strengthLayout->addWidget(strengthBar_, 3);
-  strengthLayout->addWidget(strengthLabel_, 1);
-  passLayout->addLayout(strengthLayout);
-  mainLayout->addWidget(passwordGroup);
+  mainLayout->addWidget(passwordSection);
+  mainLayout->addSpacing(24); // Spacing between Password and Options
 
-  // ===== OPTIONS GROUP =====
-  QGroupBox *optionsGroup = new QGroupBox("Options", this);
-  optionsGroup->setObjectName("optionsGroup");
-  QGridLayout *optionsLayout = new QGridLayout(optionsGroup);
+  // ===== OPTIONS SECTION =====
+  QWidget *optionsSection = new QWidget(this);
+  optionsSection->setObjectName("optionsSection");
+  QVBoxLayout *optionsLayout = new QVBoxLayout(optionsSection);
+  optionsLayout->setContentsMargins(0, 0, 0, 0);
+  optionsLayout->setSpacing(8);
 
-  QLabel *compLabel = new QLabel("Compression:", this);
+  QLabel *optionsHeader = new QLabel("OPTIONS", optionsSection);
+  optionsHeader->setObjectName("sectionHeader");
+  optionsHeader->setAlignment(Qt::AlignLeft);
+  optionsLayout->addWidget(optionsHeader);
+
+  // Compression Row (Label Left, Dropdown Right-aligned)
+  QHBoxLayout *compRow = new QHBoxLayout();
+  compRow->setContentsMargins(0, 0, 0, 0);
+  QLabel *compLabel = new QLabel("Compression:", optionsSection);
   compressionCombo_ = new QComboBox(this);
   compressionCombo_->setObjectName("compressionCombo");
-  compressionCombo_->setMinimumWidth(120);
+  compressionCombo_->setFixedWidth(200);
+  compressionCombo_->setFixedHeight(42); // Standardized height
   compressionCombo_->addItem("None", 0);
   compressionCombo_->addItem("Fast", 1);
   compressionCombo_->addItem("Balanced", 2);
   compressionCombo_->addItem("Maximum", 3);
-  compressionCombo_->addItem("Ultra", 4);
-  for (int i = 0; i < compressionCombo_->count(); ++i) {
-    compressionCombo_->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole);
-  }
-  compressionCombo_->setCurrentIndex(2); // Default: Balanced
+  compRow->addWidget(compLabel);
+  compRow->addStretch();
+  compRow->addWidget(compressionCombo_);
+  optionsLayout->addLayout(compRow);
 
+  optionsLayout->addSpacing(16); // Standardized spacing
+
+  // Checkbox Row
+  QHBoxLayout *checkRow = new QHBoxLayout();
+  checkRow->setContentsMargins(0, 0, 0, 0);
+  checkRow->setSpacing(24); // Standardized spacing
   verboseCheck_ = new QCheckBox("Verbose mode", this);
   verboseCheck_->setObjectName("verboseCheck");
 
   secureDeleteCheck_ = new QCheckBox("Secure delete original", this);
   secureDeleteCheck_->setObjectName("secureDeleteCheck");
 
-  optionsLayout->addWidget(compLabel, 0, 0);
-  optionsLayout->addWidget(compressionCombo_, 0, 1, Qt::AlignLeft);
-  optionsLayout->addWidget(verboseCheck_, 1, 0, 1, 2);
-  optionsLayout->addWidget(secureDeleteCheck_, 1, 2, 1, 2);
-  optionsLayout->setColumnStretch(3, 1); // Push everything to the left
-  mainLayout->addWidget(optionsGroup);
+  checkRow->addWidget(verboseCheck_);
+  checkRow->addWidget(secureDeleteCheck_);
+  checkRow->addStretch();
+  optionsLayout->addLayout(checkRow);
+
+  mainLayout->addWidget(optionsSection);
+  mainLayout->addSpacing(24); // Standardized spacing (v2)
 
   // ===== ACTION BUTTONS =====
-  QHBoxLayout *actionLayout = new QHBoxLayout();
-  actionLayout->setSpacing(20);
+  QWidget *actionSection = new QWidget(this);
+  QHBoxLayout *actionLayout = new QHBoxLayout(actionSection);
+  actionLayout->setContentsMargins(0, 12, 0, 0);
+  actionLayout->setSpacing(24);
 
-  encryptButton_ = new QPushButton("ENCRYPT", this);
+  encryptButton_ = new QPushButton("ENCRYPT", actionSection);
   encryptButton_->setObjectName("encryptButton");
-  encryptButton_->setMinimumHeight(45);
+  encryptButton_->setFixedHeight(48); // Balanced height
 
-  decryptButton_ = new QPushButton("DECRYPT", this);
+  decryptButton_ = new QPushButton("DECRYPT", actionSection);
   decryptButton_->setObjectName("decryptButton");
-  decryptButton_->setMinimumHeight(45);
+  decryptButton_->setFixedHeight(48); // Balanced height
 
   actionLayout->addWidget(encryptButton_);
   actionLayout->addWidget(decryptButton_);
-  mainLayout->addLayout(actionLayout);
+  mainLayout->addWidget(actionSection);
 
   // ===== PROGRESS & STATUS =====
   progressBar_ = new QProgressBar(this);
@@ -214,14 +276,15 @@ void MainWindow::setupUi() {
   progressBar_->hide();
   mainLayout->addWidget(progressBar_);
 
-  statusLabel_ = new QLabel("Ready", this);
+  statusLabel_ = new QLabel("READY", this);
   statusLabel_->setObjectName("statusLabel");
-  statusLabel_->setAlignment(Qt::AlignCenter);
+  statusLabel_->setAlignment(Qt::AlignLeft);
+  statusLabel_->setFixedHeight(14); // Shrinked status bar
   mainLayout->addWidget(statusLabel_);
 
   detailLabel_ = new QLabel("", this);
   detailLabel_->setObjectName("detailLabel");
-  detailLabel_->setAlignment(Qt::AlignCenter);
+  detailLabel_->setAlignment(Qt::AlignLeft);
   mainLayout->addWidget(detailLabel_);
 
   mainLayout->addStretch(1); // Push everything up
@@ -331,9 +394,11 @@ void MainWindow::addFilesToList(const QStringList &paths) {
 void MainWindow::updateFileTypeLabel() {
   int count = fileListWidget_->count();
   if (count == 0) {
-    fileTypeLabel_->show();
+    fileListWidget_->hide();
+    placeholderLabel_->show();
   } else {
-    fileTypeLabel_->hide();
+    fileListWidget_->show();
+    placeholderLabel_->hide();
   }
 }
 

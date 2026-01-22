@@ -8,10 +8,7 @@
 
 namespace TRE {
 
-//
-// SECURE MEMORY UTILITIES
-//
-
+// Wipes a string's memory before clearing it
 void secure_wipe_string(std::string &s) noexcept {
   if (!s.empty()) {
     sodium_memzero(s.data(), s.size());
@@ -26,11 +23,11 @@ void secure_wipe_vector(std::vector<unsigned char> &v) noexcept {
   }
 }
 
+// Overwrites file with zeros before deleting it
 bool secure_delete_file(const std::string &filename) {
   const int fd = Platform::open_file_rw(filename.c_str());
-  if (fd < 0) {
+  if (fd < 0)
     return false;
-  }
 
   const int64_t filesize = Platform::get_file_size_fd(fd);
   if (filesize < 0) {
@@ -39,7 +36,6 @@ bool secure_delete_file(const std::string &filename) {
   }
 
   if (filesize > 0) {
-    // Seek to beginning before overwriting
     if (Platform::seek_file(fd, 0, SEEK_SET) < 0) {
       Platform::close_file(fd);
       return false;
@@ -67,29 +63,23 @@ bool secure_delete_file(const std::string &filename) {
   return remove(filename.c_str()) == 0;
 }
 
+// Makes sure the user isn't trying anything sneaky with paths
 bool is_safe_path(const std::string &path) {
-  // Reject paths with directory traversal
-  if (path.find("..") != std::string::npos) {
+  if (path.find("..") != std::string::npos)
     return false;
-  }
-
-  // Reject absolute paths (Unix-style)
-  if (!path.empty() && path[0] == '/') {
+  if (!path.empty() && path[0] == '/')
     return false;
-  }
 
-  // Reject absolute paths (Windows-style like C:\, D:\, etc.)
+  // Windows drive letters (C:, D:, etc.)
   if (path.length() >= 2 && std::isalpha(static_cast<unsigned char>(path[0])) &&
       path[1] == ':') {
     return false;
   }
 
-  // Use std::filesystem for path resolution
   try {
     const auto cwd = fs::current_path();
     const auto resolved = fs::weakly_canonical(path);
 
-    // Check if resolved path is within cwd
     auto [cwd_end, resolved_it] =
         std::mismatch(cwd.begin(), cwd.end(), resolved.begin(), resolved.end());
 
@@ -99,15 +89,11 @@ bool is_safe_path(const std::string &path) {
   }
 }
 
-//
-// SECURE PASSWORD CLASS
-//
+// ---- SecurePassword ----
 
 SecurePassword::SecurePassword(size_t max_len)
     : data_(new char[max_len]), capacity_(max_len), length_(0) {
   std::memset(data_, 0, capacity_);
-  // Attempt to lock memory (prevent swapping)
-  // Uses VirtualLock on Windows, mlock on Linux/macOS
   Platform::lock_memory(data_, capacity_);
 }
 
@@ -128,14 +114,12 @@ SecurePassword::SecurePassword(SecurePassword &&other) noexcept
 
 SecurePassword &SecurePassword::operator=(SecurePassword &&other) noexcept {
   if (this != &other) {
-    // Clean up existing data
     if (data_) {
       sodium_memzero(data_, capacity_);
       Platform::unlock_memory(data_, capacity_);
       delete[] data_;
     }
 
-    // Move from other
     data_ = other.data_;
     capacity_ = other.capacity_;
     length_ = other.length_;
@@ -148,18 +132,16 @@ SecurePassword &SecurePassword::operator=(SecurePassword &&other) noexcept {
 }
 
 void SecurePassword::set(const char *input, size_t len) {
-  if (len >= capacity_) {
+  if (len >= capacity_)
     len = capacity_ - 1;
-  }
   length_ = len;
   std::memcpy(data_, input, len);
   data_[len] = '\0';
 }
 
-//
-// CRYPTOGRAPHIC FUNCTIONS
-//
+// ---- Crypto ----
 
+// Uses Argon2id to derive a 256-bit key from password
 std::vector<unsigned char> derive_key(const char *password, size_t password_len,
                                       const std::vector<unsigned char> &salt) {
   if (password == nullptr || password_len == 0 || salt.size() != SALT_SIZE) {
@@ -169,7 +151,7 @@ std::vector<unsigned char> derive_key(const char *password, size_t password_len,
   std::vector<unsigned char> key(KEY_SIZE);
   const bool key_locked = Platform::lock_memory(key.data(), KEY_SIZE);
 
-  // Argon2id parameters: 64MB memory, 3 iterations
+  // 64MB memory, 3 iterations - pretty beefy settings
   constexpr unsigned long long ARGON2_MEMORY = 64ULL * 1024 * 1024;
   constexpr unsigned long long ARGON2_OPS = 3;
 
@@ -177,9 +159,8 @@ std::vector<unsigned char> derive_key(const char *password, size_t password_len,
                     ARGON2_OPS, ARGON2_MEMORY,
                     crypto_pwhash_ALG_ARGON2ID13) != 0) {
     sodium_memzero(key.data(), KEY_SIZE);
-    if (key_locked) {
+    if (key_locked)
       Platform::unlock_memory(key.data(), KEY_SIZE);
-    }
     std::exit(1);
   }
 
@@ -190,12 +171,10 @@ std::vector<unsigned char>
 encrypt_aes256gcm(const std::vector<unsigned char> &plaintext,
                   const std::vector<unsigned char> &key,
                   const std::vector<unsigned char> &nonce) {
-  if (key.size() != KEY_SIZE || nonce.size() != NONCE_SIZE) {
+  if (key.size() != KEY_SIZE || nonce.size() != NONCE_SIZE)
     std::exit(1);
-  }
-  if (!crypto_aead_aes256gcm_is_available()) {
+  if (!crypto_aead_aes256gcm_is_available())
     std::exit(1);
-  }
 
   std::vector<unsigned char> ciphertext(plaintext.size() +
                                         crypto_aead_aes256gcm_ABYTES);
@@ -213,15 +192,12 @@ std::vector<unsigned char>
 decrypt_aes256gcm(const std::vector<unsigned char> &ciphertext,
                   const std::vector<unsigned char> &key,
                   const std::vector<unsigned char> &nonce) {
-  if (key.size() != KEY_SIZE || nonce.size() != NONCE_SIZE) {
+  if (key.size() != KEY_SIZE || nonce.size() != NONCE_SIZE)
     return {};
-  }
-  if (!crypto_aead_aes256gcm_is_available()) {
+  if (!crypto_aead_aes256gcm_is_available())
     std::exit(1);
-  }
-  if (ciphertext.size() < crypto_aead_aes256gcm_ABYTES) {
+  if (ciphertext.size() < crypto_aead_aes256gcm_ABYTES)
     return {};
-  }
 
   std::vector<unsigned char> plaintext(ciphertext.size() -
                                        crypto_aead_aes256gcm_ABYTES);
@@ -237,81 +213,69 @@ decrypt_aes256gcm(const std::vector<unsigned char> &ciphertext,
   return plaintext;
 }
 
-//
-// VALIDATION
-//
+// ---- Password validation ----
 
 bool validate_password(std::string_view password, std::string &error_msg) {
-  // Check against blacklist (case-insensitive)
+  // Check against common passwords
   std::string password_lower(password);
   std::transform(password_lower.begin(), password_lower.end(),
                  password_lower.begin(),
                  [](unsigned char c) { return std::tolower(c); });
 
-  // Search blacklist by converting each entry to lowercase
   for (const auto &blacklisted : PASSWORD_BLACKLIST) {
     std::string blacklisted_lower = blacklisted;
     std::transform(blacklisted_lower.begin(), blacklisted_lower.end(),
                    blacklisted_lower.begin(),
                    [](unsigned char c) { return std::tolower(c); });
     if (password_lower == blacklisted_lower) {
-      error_msg = "This password is too common and easily guessable.";
+      error_msg = "This password is too common.";
       return false;
     }
   }
 
   if (password.length() < MIN_PASSWORD_LENGTH) {
-    error_msg = "Password must be at least " +
-                std::to_string(MIN_PASSWORD_LENGTH) + " characters long";
+    error_msg = "Password too short.";
     return false;
   }
 
-  // Single-pass character analysis
   int uppercase = 0, lowercase = 0, digits = 0, symbols = 0;
   for (const char c : password) {
     const auto uc = static_cast<unsigned char>(c);
     if (!std::isprint(uc) && c != ' ') {
-      error_msg = "Password contains invalid non-printable characters";
+      error_msg = "Invalid characters in password.";
       return false;
     }
-    if (std::isupper(uc)) {
+    if (std::isupper(uc))
       ++uppercase;
-    } else if (std::islower(uc)) {
+    else if (std::islower(uc))
       ++lowercase;
-    } else if (std::isdigit(uc)) {
+    else if (std::isdigit(uc))
       ++digits;
-    } else if (std::ispunct(uc) || c == ' ') {
+    else if (std::ispunct(uc) || c == ' ')
       ++symbols;
-    }
   }
 
   if (uppercase < MIN_UPPERCASE) {
-    error_msg = "Password must contain at least " +
-                std::to_string(MIN_UPPERCASE) + " uppercase letters";
+    error_msg = "Need more uppercase letters.";
     return false;
   }
   if (lowercase < MIN_LOWERCASE) {
-    error_msg = "Password must contain at least " +
-                std::to_string(MIN_LOWERCASE) + " lowercase letters";
+    error_msg = "Need more lowercase letters.";
     return false;
   }
   if (digits < MIN_DIGITS) {
-    error_msg = "Password must contain at least " + std::to_string(MIN_DIGITS) +
-                " digits";
+    error_msg = "Need more digits.";
     return false;
   }
   if (symbols < MIN_SYMBOLS) {
-    error_msg = "Password must contain at least " +
-                std::to_string(MIN_SYMBOLS) + " symbols";
+    error_msg = "Need more symbols.";
     return false;
   }
 
   return true;
 }
 
-//
-// FILE UTILITIES
-//
+// ---- File helpers ----
 
 std::string extract_extension(std::string_view filename) {
   const auto dot_pos = filename.find_last_of('.');
@@ -325,7 +289,6 @@ std::string extract_extension(std::string_view filename) {
   }
 
   auto ext = filename.substr(dot_pos);
-  // Validate extension doesn't contain invalid characters
   if (ext.find('/') != std::string_view::npos ||
       ext.find('\\') != std::string_view::npos ||
       ext.find("..") != std::string_view::npos) {
@@ -355,10 +318,9 @@ std::string auto_generate_output_filename(std::string_view input,
     return input_str + ".tre";
   }
 
-  // Decrypt mode: try to read stored extension from file
+  // For decrypt, try to read original extension from the file header
   std::ifstream infile(input_str, std::ios::binary);
   if (infile) {
-    // Skip version byte, salt, nonce to get to extension length
     constexpr size_t HEADER_OFFSET = 1 + SALT_SIZE + NONCE_SIZE;
     infile.seekg(HEADER_OFFSET, std::ios::beg);
 
@@ -383,7 +345,7 @@ std::string auto_generate_output_filename(std::string_view input,
     }
   }
 
-  // Fallback
+  // Fallback if we can't read the stored extension
   if (input.length() > 4 && input.substr(input.length() - 4) == ".tre") {
     return std::string(input.substr(0, input.length() - 4)) + ".txt";
   }
