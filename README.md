@@ -84,8 +84,8 @@ If you prefer the terminal, you can use the `tre` command:
 ## Security Details
 
 I've tried to follow best practices to keep things secure:
-1. **Authenticated Encryption:** We use AEAD (AES-GCM) so the tool can tell if a file has been tampered with.
-2. **Memory Safety:** We use `sodium_memzero` to clear passwords from RAM immediately.
+1. **Authenticated Encryption:** I use AEAD (AES-GCM) so the tool can tell if a file has been tampered with.
+2. **Memory Safety:** I use `sodium_memzero` to clear passwords from RAM immediately.
 3. **Hardened Passwords:** Argon2id is used with 64MB of RAM to make it very difficult for hackers to guess passwords using specialized hardware.
 
 ---
