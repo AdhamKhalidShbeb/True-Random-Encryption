@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     name: Build and Release
@@ -15,13 +18,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            artifact_name: tre-linux
             asset_name: TRE-v1.0.0-linux-x64.tar.gz
           - os: windows-latest
-            artifact_name: tre-windows
             asset_name: TRE-v1.0.0-windows-x64.zip
           - os: macos-latest
-            artifact_name: tre-macos
             asset_name: TRE-v1.0.0-macos-x64.zip
 
     steps:
@@ -56,32 +56,29 @@ jobs:
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=./install_dir \
             ${{ matrix.os == 'windows-latest' && format('-DCMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_INSTALLATION_ROOT) || '' }}
 
       - name: Build
         run: cmake --build build --config Release
 
+      - name: Install
+        run: cmake --install build --config Release
+
       - name: Package (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          mkdir -p dist
-          cp bin/linux/tre bin/linux/tre-gui dist/
-          tar -czvf ${{ matrix.asset_name }} -C dist .
+          tar -czvf ${{ matrix.asset_name }} -C ./install_dir/bin .
 
       - name: Package (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          mkdir -p dist
-          cp bin/macos/tre bin/macos/tre-gui dist/
-          zip -r ${{ matrix.asset_name }} dist/*
+          zip -r ${{ matrix.asset_name }} ./install_dir/bin/*
 
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          mkdir dist
-          copy bin\windows\tre.exe dist\
-          copy bin\windows\tre-gui.exe dist\
-          powershell Compress-Archive -Path dist\* -DestinationPath ${{ matrix.asset_name }}
+          powershell Compress-Archive -Path ./install_dir/bin/* -DestinationPath ${{ matrix.asset_name }}
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
