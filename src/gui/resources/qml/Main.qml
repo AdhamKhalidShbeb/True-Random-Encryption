@@ -49,7 +49,7 @@ ApplicationWindow {
                 spacing: 8
 
                 Text {
-                    text: "v1.0"
+                    text: "v1.0.0"
                     color: "#444444"
                     font.pixelSize: 12
                     font.bold: true

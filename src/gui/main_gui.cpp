@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   QGuiApplication app(argc, argv);
   app.setWindowIcon(QIcon(":/icon.png"));
   app.setApplicationName("True Random Encryption");
-  app.setApplicationVersion("1.0");
+  app.setApplicationVersion("1.0.0");
   app.setOrganizationName("TRE Team");
 
   Backend backend;

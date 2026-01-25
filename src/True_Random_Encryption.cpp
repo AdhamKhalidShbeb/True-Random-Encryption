@@ -309,7 +309,7 @@ void perform_decryption(const std::string &input_file,
 }
 
 void print_usage(const char *prog_name) {
-  std::cout << "True Random Encryption (TRE) v1.0\n"
+  std::cout << "True Random Encryption (TRE) v1.0.0\n"
             << "Usage: " << prog_name << " <command> [options] <file>\n\n"
             << "Commands:\n"
             << "  encrypt <file>   Encrypt a file\n"
@@ -328,7 +328,7 @@ void print_usage(const char *prog_name) {
 }
 
 void print_version() {
-  std::cout << "True Random Encryption (TRE) v1.0\n"
+  std::cout << "True Random Encryption (TRE) v1.0.0\n"
             << "Copyright (c) 2025 Adham Khalid Shbeb\n"
             << "License: MIT\n";
 }
