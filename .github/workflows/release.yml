@@ -45,19 +45,22 @@ jobs:
       - name: Install Dependencies (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          brew install libsodium zstd
-
-      - name: Install Dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          vcpkg install libsodium:x64-windows zstd:x64-windows
+          brew install libsodium zstd || true
 
       - name: Configure CMake
+        shell: bash
         run: |
-          cmake -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=./install_dir \
-            ${{ matrix.os == 'windows-latest' && format('-DCMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_INSTALLATION_ROOT) || '' }}
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            cmake -B build \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=./install_dir \
+              -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
+              -DVCPKG_TARGET_TRIPLET=x64-windows
+          else
+            cmake -B build \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=./install_dir
+          fi
 
       - name: Build
         run: cmake --build build --config Release
@@ -73,12 +76,14 @@ jobs:
       - name: Package (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          zip -r ${{ matrix.asset_name }} ./install_dir/bin/*
+          cd install_dir/bin
+          zip -r ../../${{ matrix.asset_name }} .
 
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
-          powershell Compress-Archive -Path ./install_dir/bin/* -DestinationPath ${{ matrix.asset_name }}
+          Compress-Archive -Path ./install_dir/bin/* -DestinationPath ${{ matrix.asset_name }}
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
