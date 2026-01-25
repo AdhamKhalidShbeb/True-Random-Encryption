@@ -1,8 +1,0 @@
-{
-  "name": "tre",
-  "version-string": "1.0.0",
-  "dependencies": [
-    "libsodium",
-    "zstd"
-  ]
-}

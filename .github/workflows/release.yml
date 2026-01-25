@@ -44,20 +44,27 @@ jobs:
 
       - name: Install Dependencies (macOS)
         if: matrix.os == 'macos-latest'
-        continue-on-error: true
         run: |
-          brew install libsodium zstd
+          brew list libsodium || brew install libsodium
+          brew list zstd || brew install zstd
+
+      - name: Install Dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          VCPKG_FORCE_SYSTEM_BINARIES: 1
+        run: |
+          vcpkg install libsodium:x64-windows zstd:x64-windows --binarysource=clear
 
       - name: Configure CMake
         shell: bash
         run: |
           if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            # Use manifest mode (vcpkg.json) and let CMake handle dependencies
             cmake -B build \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=./install_dir \
               -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
-              -DVCPKG_TARGET_TRIPLET=x64-windows
+              -DVCPKG_TARGET_TRIPLET=x64-windows \
+              -DVCPKG_MANIFEST_MODE=OFF
           else
             cmake -B build \
               -DCMAKE_BUILD_TYPE=Release \
