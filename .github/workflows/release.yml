@@ -50,11 +50,9 @@ jobs:
 
       - name: Setup vcpkg (Windows)
         if: matrix.os == 'windows-latest'
-        uses: microsoft/vcpkg-action@v1
+        uses: lukka/run-vcpkg@v11
         with:
-          pkgs: libsodium zstd
-          triplet: x64-windows
-          cache: true
+          vcpkgJsonGlob: 'vcpkg.json'
 
       - name: Configure CMake
         shell: bash
