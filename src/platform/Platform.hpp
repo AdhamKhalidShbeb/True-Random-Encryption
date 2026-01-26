@@ -21,6 +21,7 @@
 #include <bcrypt.h>
 #include <fcntl.h>
 #include <io.h>
+#include <ntstatus.h>
 #include <sys/stat.h>
 #include <windows.h>
 #pragma comment(lib, "bcrypt.lib")

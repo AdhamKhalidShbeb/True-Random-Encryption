@@ -9,6 +9,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <bcrypt.h>
+#include <ntstatus.h>
 #include <windows.h>
 #pragma comment(lib, "bcrypt.lib")
 #else
