@@ -41,7 +41,7 @@ jobs:
           version: '6.7.2'
           host: ${{ matrix.os == 'windows-latest' && 'windows' || (matrix.os == 'macos-latest' && 'mac' || 'linux') }}
           target: 'desktop'
-          arch: ${{ matrix.os == 'windows-latest' && 'win64_msvc2022_64' || '' }}
+          arch: ${{ matrix.os == 'windows-latest' && 'win64_msvc2019_64' || '' }}
 
       - name: Install Dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
