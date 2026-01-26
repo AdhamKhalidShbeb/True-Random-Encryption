@@ -1,6 +1,7 @@
 {
     "name": "tre",
     "version-string": "1.0.0",
+    "builtin-baseline": "36d042a69485607316a733f49e2a39c4355260d2",
     "dependencies": [
         "libsodium",
         "zstd"
