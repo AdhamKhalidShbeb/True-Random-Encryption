@@ -28,10 +28,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Disable Windows Python Alias
+        if: matrix.os == 'windows-latest'
+        run: |
+          Remove-Item -Force "$env:LOCALAPPDATA\Microsoft\WindowsApps\python.exe" -ErrorAction SilentlyContinue
+          Remove-Item -Force "$env:LOCALAPPDATA\Microsoft\WindowsApps\python3.exe" -ErrorAction SilentlyContinue
+        shell: pwsh
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.5.3'
+          version: '6.7.2'
           host: ${{ matrix.os == 'windows-latest' && 'windows' || (matrix.os == 'macos-latest' && 'mac' || 'linux') }}
           target: 'desktop'
           arch: ${{ matrix.os == 'windows-latest' && 'win64_msvc2022_64' || '' }}
@@ -47,6 +54,7 @@ jobs:
         run: |
           brew list libsodium || brew install libsodium
           brew list zstd || brew install zstd
+        continue-on-error: true
 
       - name: Setup vcpkg (Windows)
         if: matrix.os == 'windows-latest'
