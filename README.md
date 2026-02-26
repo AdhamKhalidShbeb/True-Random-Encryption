@@ -10,7 +10,7 @@
 
 ## What is this?
 
-TRE is a small utility I built to help protect files. Most encryption tools use software to generate "random" numbers, but TRE tries to be a bit more thorough by using your CPU's actual hardware (RDRAND) to get true physical randomness.
+TRE is a small utility I built to help encrypt files. Most encryption tools use software to generate "random" numbers, but TRE tries to be a bit more thorough by using your CPU's actual hardware (RDRAND) to get true physical randomness, and not only that, but it also uses Argon2id to protect against brute-force attacks, it includes compression to make files smaller before encrypting, and it wipes sensitive data from memory as soon as it's done.
 
 It's not meant to be a massive enterprise suite—just a reliable, open-source tool for anyone who wants to keep their data private using modern standards.
 

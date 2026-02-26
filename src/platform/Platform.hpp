@@ -18,12 +18,12 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+#include <windows.h>
+#include <ntstatus.h>
 #include <bcrypt.h>
 #include <fcntl.h>
 #include <io.h>
-#include <ntstatus.h>
 #include <sys/stat.h>
-#include <windows.h>
 #pragma comment(lib, "bcrypt.lib")
 #else
 #include <fcntl.h>
