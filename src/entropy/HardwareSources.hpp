@@ -6,6 +6,11 @@
 #include <fstream>
 #include <iostream>
 
+// RDRAND is only available on x86/x64 processors
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) ||             \
+    defined(_M_IX86)
+#define TRE_HAS_X86 1
+
 // CPUID detection for RDRAND support
 #if defined(_MSC_VER)
 #include <intrin.h>
@@ -80,6 +85,8 @@ public:
 
   [[nodiscard]] int priority() const noexcept override { return 100; }
 };
+
+#endif // TRE_HAS_X86
 
 // Linux-only: reads from /dev/hwrng if available
 #if defined(__linux__)

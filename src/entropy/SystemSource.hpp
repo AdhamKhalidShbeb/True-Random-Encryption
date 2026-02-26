@@ -8,9 +8,11 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+#define WIN32_NO_STATUS
+#include <windows.h>
+#undef WIN32_NO_STATUS
 #include <bcrypt.h>
 #include <ntstatus.h>
-#include <windows.h>
 #pragma comment(lib, "bcrypt.lib")
 #else
 #include <fstream>

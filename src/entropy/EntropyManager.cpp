@@ -6,7 +6,9 @@
 
 EntropyManager::EntropyManager() {
   // Register sources in priority order: RDRAND > hwrng device > system RNG
+#ifdef TRE_HAS_X86
   sources.push_back(std::make_unique<CpuRngSource>());
+#endif
 
 #if defined(__linux__)
   sources.push_back(std::make_unique<DeviceRngSource>());
