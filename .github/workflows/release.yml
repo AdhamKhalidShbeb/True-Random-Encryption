@@ -9,27 +9,194 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build and Release
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            asset_name: TRE-v1.0.0-linux-x64.tar.gz
-          - os: windows-latest
-            asset_name: TRE-v1.0.0-windows-x64.zip
-          - os: macos-latest
-            asset_name: TRE-v1.0.0-macos-x64.zip
+  # ─── Linux ────────────────────────────────────────────────────────────
+  linux:
+    name: Linux Build
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.7.2'
+          host: 'linux'
+          target: 'desktop'
+          modules: 'qtsvg'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsodium-dev libzstd-dev build-essential \
+            libxcb-cursor0 libxcb-cursor-dev libfuse2
+
+      - name: Configure & Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install_dir
+          cmake --build build --config Release -j$(nproc)
+          cmake --install build --config Release
+
+      - name: Bundle Qt Libraries
+        run: |
+          # Download linuxdeployqt
+          wget -q https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+          chmod +x linuxdeployqt-continuous-x86_64.AppImage
+
+          # Create packaging directory
+          mkdir -p package/usr/bin package/usr/share/applications package/usr/share/icons/hicolor/256x256/apps
+
+          cp install_dir/bin/tre package/usr/bin/
+          cp install_dir/bin/tre-gui package/usr/bin/
+
+          # Create a .desktop file for linuxdeployqt
+          cat > package/usr/share/applications/tre-gui.desktop << 'DESKTOP'
+          [Desktop Entry]
+          Name=True Random Encryption
+          Exec=tre-gui
+          Icon=tre-gui
+          Type=Application
+          Categories=Utility;Security;
+          DESKTOP
+          sed -i 's/^          //' package/usr/share/applications/tre-gui.desktop
+
+          # Create a placeholder icon (linuxdeployqt requires one)
+          convert -size 256x256 xc:transparent package/usr/share/icons/hicolor/256x256/apps/tre-gui.png 2>/dev/null || \
+            touch package/usr/share/icons/hicolor/256x256/apps/tre-gui.png
+
+          # Run linuxdeployqt to bundle Qt libs
+          ./linuxdeployqt-continuous-x86_64.AppImage \
+            package/usr/share/applications/tre-gui.desktop \
+            -bundle-non-qt-libs \
+            -qmldir=$Qt6_DIR/../../../qml \
+            -extra-plugins=platforms,xcbglintegrations,iconengines,imageformats \
+            -no-translations \
+            -no-strip \
+            || true
+
+          # Also copy the CLI binary
+          cp install_dir/bin/tre package/usr/bin/
+
+      - name: Package as tar.gz
+        run: |
+          cd package/usr
+          tar -czvf ../../TRE-${{ steps.version.outputs.VERSION }}-linux-x64.tar.gz .
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: TRE-${{ steps.version.outputs.VERSION }}-linux-x64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── macOS ────────────────────────────────────────────────────────────
+  macos:
+    name: macOS Build
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.7.2'
+          host: 'mac'
+          target: 'desktop'
+          modules: 'qtsvg'
+
+      - name: Install Dependencies
+        run: |
+          brew install libsodium zstd
+        continue-on-error: true
+
+      - name: Configure & Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install_dir
+          cmake --build build --config Release -j$(sysctl -n hw.ncpu)
+          cmake --install build --config Release
+
+      - name: Bundle with macdeployqt
+        run: |
+          # macdeployqt bundles Qt frameworks into the .app bundle
+          # Find the app bundle output
+          if [ -d "bin/macos/tre-gui.app" ]; then
+            APP_PATH="bin/macos/tre-gui.app"
+          elif [ -d "install_dir/bin/tre-gui.app" ]; then
+            APP_PATH="install_dir/bin/tre-gui.app"
+          else
+            echo "App bundle not found, creating one manually..."
+            mkdir -p "TRE.app/Contents/MacOS"
+            mkdir -p "TRE.app/Contents/Resources"
+            cp install_dir/bin/tre-gui "TRE.app/Contents/MacOS/"
+            cat > "TRE.app/Contents/Info.plist" << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>
+            <string>tre-gui</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.tre.gui</string>
+            <key>CFBundleName</key>
+            <string>True Random Encryption</string>
+            <key>CFBundleVersion</key>
+            <string>${{ steps.version.outputs.VERSION }}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ steps.version.outputs.VERSION }}</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          PLIST
+            sed -i '' 's/^          //' "TRE.app/Contents/Info.plist"
+            APP_PATH="TRE.app"
+          fi
+
+          macdeployqt "$APP_PATH" -qmldir=$Qt6_DIR/../../../qml -verbose=2 || true
+
+          # Create packaging dir
+          mkdir -p release_package
+          cp -R "$APP_PATH" release_package/
+          cp install_dir/bin/tre release_package/ 2>/dev/null || cp bin/macos/tre release_package/ || true
+
+      - name: Package as zip
+        run: |
+          cd release_package
+          zip -r ../TRE-${{ steps.version.outputs.VERSION }}-macos-x64.zip .
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: TRE-${{ steps.version.outputs.VERSION }}-macos-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Windows ──────────────────────────────────────────────────────────
+  windows:
+    name: Windows Build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
       - name: Disable Windows Python Alias
-        if: matrix.os == 'windows-latest'
         run: |
           Remove-Item -Force "$env:LOCALAPPDATA\Microsoft\WindowsApps\python.exe" -ErrorAction SilentlyContinue
           Remove-Item -Force "$env:LOCALAPPDATA\Microsoft\WindowsApps\python3.exe" -ErrorAction SilentlyContinue
@@ -39,70 +206,75 @@ jobs:
         uses: jurplel/install-qt-action@v3
         with:
           version: '6.7.2'
-          host: ${{ matrix.os == 'windows-latest' && 'windows' || (matrix.os == 'macos-latest' && 'mac' || 'linux') }}
+          host: 'windows'
           target: 'desktop'
-          arch: ${{ matrix.os == 'windows-latest' && 'win64_msvc2019_64' || '' }}
+          arch: 'win64_msvc2019_64'
+          modules: 'qtsvg'
 
-      - name: Install Dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libsodium-dev libzstd-dev build-essential
-
-      - name: Install Dependencies (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew list libsodium || brew install libsodium
-          brew list zstd || brew install zstd
-        continue-on-error: true
-
-      - name: Install Dependencies (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: Install Dependencies
         run: |
           vcpkg install libsodium:x64-windows zstd:x64-windows
 
-      - name: Configure CMake
+      - name: Configure & Build
         shell: bash
         run: |
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            cmake -B build \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=./install_dir \
-              -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
-              -DVCPKG_TARGET_TRIPLET=x64-windows \
-              -DVCPKG_MANIFEST_MODE=OFF
-          else
-            cmake -B build \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=./install_dir
-          fi
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=./install_dir \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET=x64-windows \
+            -DVCPKG_MANIFEST_MODE=OFF
+          cmake --build build --config Release
+          cmake --install build --config Release
 
-      - name: Build
-        run: cmake --build build --config Release
-
-      - name: Install
-        run: cmake --install build --config Release
-
-      - name: Package (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          tar -czvf ${{ matrix.asset_name }} -C ./install_dir/bin .
-
-      - name: Package (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          cd install_dir/bin
-          zip -r ../../${{ matrix.asset_name }} .
-
-      - name: Package (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: Bundle with windeployqt
         shell: pwsh
         run: |
-          Compress-Archive -Path ./install_dir/bin/* -DestinationPath ${{ matrix.asset_name }}
+          # Create packaging dir
+          New-Item -ItemType Directory -Force -Path release_package
 
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v1
+          # Copy binaries
+          Copy-Item -Path "install_dir\bin\*" -Destination "release_package\" -Recurse -ErrorAction SilentlyContinue
+          if (-not (Test-Path "release_package\tre-gui.exe")) {
+            Copy-Item -Path "bin\windows\*" -Destination "release_package\" -Recurse -ErrorAction SilentlyContinue
+          }
+
+          # Copy vcpkg DLLs (libsodium, zstd)
+          $vcpkgBin = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin"
+          if (Test-Path $vcpkgBin) {
+            Copy-Item -Path "$vcpkgBin\*.dll" -Destination "release_package\" -ErrorAction SilentlyContinue
+          }
+
+          # Run windeployqt to bundle Qt DLLs
+          $qtBinDir = (Get-ChildItem -Path $env:Qt6_DIR -Recurse -Filter "windeployqt.exe" -ErrorAction SilentlyContinue | Select-Object -First 1).DirectoryName
+          if (-not $qtBinDir) {
+            # Try common path
+            $qtBinDir = "$env:QT_ROOT_DIR\bin"
+          }
+          & "$qtBinDir\windeployqt.exe" "release_package\tre-gui.exe" --qmldir "$env:QT_ROOT_DIR\qml" --release --no-translations --no-opengl-sw --no-system-d3d-compiler
+
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          choco install nsis -y
+
+      - name: Build NSIS Installer
+        shell: pwsh
+        run: |
+          # Set version for NSIS
+          $version = "${{ steps.version.outputs.VERSION }}"
+          & "C:\Program Files (x86)\NSIS\makensis.exe" /DVERSION=$version /DOUTDIR=. scripts\installer.nsi
+
+      - name: Package as zip (portable)
+        shell: pwsh
+        run: |
+          Compress-Archive -Path release_package\* -DestinationPath "TRE-${{ steps.version.outputs.VERSION }}-windows-x64-portable.zip"
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.asset_name }}
+          files: |
+            TRE-${{ steps.version.outputs.VERSION }}-windows-x64-portable.zip
+            TRE-${{ steps.version.outputs.VERSION }}-windows-x64-setup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
